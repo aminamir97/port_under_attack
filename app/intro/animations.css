@@ -1,0 +1,45 @@
+@keyframes alertPulse {
+  0% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.22;
+  }
+  100% {
+    opacity: 0.08;
+  }
+}
+@keyframes scanLight {
+  0% {
+    transform: translateX(-10%) skewX(-12deg);
+  }
+  50% {
+    transform: translateX(40%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(110%) skewX(-12deg);
+  }
+}
+@keyframes radarPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0.07;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+.animate-alertPulse {
+  animation: alertPulse 2.6s ease-in-out infinite;
+}
+.animate-scanLight {
+  animation: scanLight 4.8s linear infinite;
+}
+.animate-radarPulse {
+  animation: radarPulse 3.6s ease-out infinite;
+}

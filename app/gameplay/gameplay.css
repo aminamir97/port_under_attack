@@ -1,0 +1,20 @@
+@keyframes move-ship {
+  from {
+    right: -5%;
+  }
+  to {
+    right: 105%;
+  }
+}
+.animate-move-ship {
+  animation-name: move-ship;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.map-port {
+  background-color: var(--tw-color-port-dark, #15181c);
+}
+.map-sea {
+  background-color: var(--tw-color-sea-dark, #1a232a);
+}

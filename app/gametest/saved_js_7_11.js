@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Application, Container, Assets, Sprite, TilingSprite, Text, Graphics } from "pixi.js";
-
+import { Application, Container, Assets, Sprite, TilingSprite } from "pixi.js";
 
 export default function GameTestPage() {
     const containerRef = useRef(null);
@@ -11,7 +10,7 @@ export default function GameTestPage() {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
     // 🌍 Global values
-    const BASE_SPEED = 0.5;
+    const BASE_SPEED = 2;
     let PORT_WIDTH = 0;
     let SEA_WIDTH = 0;
 
@@ -127,24 +126,20 @@ export default function GameTestPage() {
         if (scenario === "jump") applyPositionJumpEffect(ship, app, dim);
         if (scenario === "slow") applySlowDriftEffect(ship, app, dim);
         if (scenario === "ghost") applyDuplicateGhostEffect(ship, app, dim);
-        if (scenario === "blackout") applyCompleteBlackoutEffect(ship, app, dim);
-        if (scenario === "snr") applySNRDropEffect(ship, app, dim);
-
-
 
         alert("new ship is spawned with " + scenario + " effect!");
 
 
-        if (!["blackout"].includes(scenario)) {
-            app.ticker.add(() => {
-                ship.x -= speed;
-                if (ship.x < -100) {
-                    ship.x = dim.width + 100;
-                    ship.alpha = 1;
-                    ship.rotation = Math.PI;
-                }
-            });
-        }
+        app.ticker.add(() => {
+            ship.x -= speed;
+
+            // Respawn
+            if (ship.x < -100) {
+                ship.x = dim.width + 100;
+                ship.alpha = 1;
+                ship.rotation = Math.PI;
+            }
+        });
     }
 
 
@@ -312,148 +307,15 @@ export default function GameTestPage() {
         });
     }
 
-    // 📡 Jamming / Blackout: Freeze + Countdown + Respawn
-    function applyCompleteBlackoutEffect(ship, app, dim) {
-        let isFrozen = false;
-        let freezeDuration = 5; // seconds
-        let freezeStartTime = 0;
-        const baseSpeed = BASE_SPEED;
-
-        // Create a visible countdown text near the ship
-        const timerText = new Text("", {
-            fill: "#ff4444",
-            fontSize: 20,
-            fontWeight: "bold",
-            stroke: "#000000",
-            strokeThickness: 4,
-        });
-        timerText.anchor.set(0.5);
-        ship.parent.addChild(timerText);
-
-        app.ticker.add((delta) => {
-            if (!isFrozen) {
-                console.log("Ship moving normally.", isFrozen);
-                // Move ship normally
-                ship.x -= baseSpeed * 1;
-
-                // Trigger blackout when ship reaches middle of screen
-                if (ship.x < dim.width * 0.6 && ship.x > dim.width * 0.4) {
-                    isFrozen = true;
-                    freezeStartTime = app.ticker.lastTime;
-                    ship.tint = 0x555555;
-                    console.log("🚨 Blackout triggered! Ship frozen.");
-                }
-            } else {
-                // Calculate remaining time
-                const elapsed = (app.ticker.lastTime - freezeStartTime) / 1000;
-                const remaining = Math.max(0, freezeDuration - elapsed);
-
-                // Update countdown text
-                timerText.text = `${remaining.toFixed(1)}s`;
-                timerText.x = ship.x;
-                timerText.y = ship.y - 50;
-
-                // End of freeze → fade out then respawn
-                if (remaining <= 0) {
-                    ship.alpha -= 0.05;
-                    if (ship.alpha <= 0) {
-                        ship.alpha = 1;
-                        ship.tint = 0xffffff;
-                        ship.x = dim.width + 100;
-                        ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-                        isFrozen = false;
-                        timerText.text = "";
-                    }
-                }
-            }
-
-            // If ship hits the port before blackout, respawn
-            if (ship.x < PORT_WIDTH + ship.width) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-                ship.alpha = 1;
-                ship.tint = 0xffffff;
-                timerText.text = "";
-                isFrozen = false;
-            }
-        });
-    }
-
-    // 📡 Spoofing/Jamming: SNR Drop Effect (red aura + signal bar)
-    function applySNRDropEffect(ship, app, dim) {
-        const baseSpeed = BASE_SPEED;
-
-        // 🔴 Create red circular glow around ship
-        const glow = new Graphics();
-        glow.circle(0, 0, 60);
-        glow.fill({ color: 0xff0000, alpha: 0.2 }); // starts soft
-        ship.parent.addChild(glow);
-
-        // 📶 Create signal strength bar (above ship)
-        const snrBarContainer = new Container();
-        const snrBarBg = new Graphics();
-        snrBarBg.rect(-25, -8, 50, 6).fill({ color: 0x222222 }); // background (dark gray)
-        const snrBar = new Graphics();
-        snrBar.rect(-25, -8, 50, 6).fill({ color: 0x00ff00 }); // start green
-        snrBarContainer.addChild(snrBarBg);
-        snrBarContainer.addChild(snrBar);
-        ship.parent.addChild(snrBarContainer);
-
-        // 🎚️ Variables for animation
-        let targetSignal = 1; // 1 = full
-        let currentSignal = 1;
-        let frameCount = 0;
-
-        app.ticker.add(() => {
-            // 🚢 move ship
-            ship.x -= baseSpeed;
-
-            // sync visuals with ship position
-            glow.x = ship.x;
-            glow.y = ship.y;
-            snrBarContainer.x = ship.x;
-            snrBarContainer.y = ship.y - 60;
-
-            // every second → change signal
-            frameCount++;
-            if (frameCount % 60 === 0) {
-                targetSignal = 0.2 + Math.random() * 0.8;
-            }
-
-            // smooth interpolation
-            currentSignal += (targetSignal - currentSignal) * 0.1;
-
-            // 🔥 red glow stronger when signal is weak
-            const glowAlpha = 0.5 + (1 - currentSignal) * 0.8;
-            glow.alpha = glowAlpha;
-
-            // 🟩 update bar
-            const barWidth = 50 * currentSignal;
-            snrBar.clear();
-
-            let color = 0x00ff00; // green
-            if (currentSignal < 0.6) color = 0xffff00; // yellow
-            if (currentSignal < 0.3) color = 0xff0000; // red
-
-            snrBar.rect(-25, -8, barWidth, 6).fill({ color });
-
-            // ♻️ respawn if reaches port
-            if (ship.x < PORT_WIDTH + ship.width) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-                currentSignal = 1;
-                targetSignal = 1;
-                glow.alpha = 0.2;
-                snrBar.clear().rect(-25, -8, 50, 6).fill({ color: 0x00ff00 });
-            }
-        });
-    }
 
 
 
 
 
-    // ⏸️ Reset / Pause game
+
+
+
+
     function resetGame() {
         const app = appRef.current;
         if (app) {
@@ -480,16 +342,6 @@ export default function GameTestPage() {
                 <button onClick={() => spawnShipWithScenario("jump")} className="bg-white/20 text-white px-3 py-1 rounded">Jump</button>
                 <button onClick={() => spawnShipWithScenario("slow")} className="bg-white/20 text-white px-3 py-1 rounded">Slow</button>
                 <button onClick={() => spawnShipWithScenario("ghost")} className="bg-white/20 text-white px-3 py-1 rounded">Ghost</button>
-                <button onClick={() => spawnShipWithScenario("blackout")} className="bg-white/20 text-white px-3 py-1 rounded">
-                    Blackout
-                </button>
-                <button
-                    onClick={() => spawnShipWithScenario("snr")}
-                    className="bg-white/20 text-white px-3 py-1 rounded"
-                >
-                    SNR Drop
-                </button>
-
             </div>
 
             {/* 🎮 Game Container */}

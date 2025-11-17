@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Application, Container, Assets, Sprite, TilingSprite, Text, Graphics } from "pixi.js";
+import GameToolbar from "../components/GameToolbar";
+import SideMenu from "../components/SideMenu";
+import BottomToolbar from "../components/BottomToolbar";
 
 
 export default function GameTestPage() {
@@ -9,11 +12,132 @@ export default function GameTestPage() {
     const gameSceneRef = useRef(null);
     const texturesRef = useRef({});
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+
+
 
     // 🌍 Global values
     const BASE_SPEED = 0.5;
     let PORT_WIDTH = 0;
     let SEA_WIDTH = 0;
+    // 📊 Static state for event logs
+    const [eventLogs] = useState([
+        { time: "12:02:01", message: "Ship #202 detected weak GNSS signal" },
+        { time: "12:02:08", message: "Spoofing pattern detected near port" },
+        { time: "12:02:17", message: "Ship #305 lost communication channel" },
+        { time: "12:02:20", message: "Signal restored after countermeasure" },
+        { time: "12:03:05", message: "New learning card unlocked: Spoofing Drift" },
+        { time: "12:03:28", message: "High interference detected" },
+        { time: "12:03:45", message: "Ship #401 experiencing position jump" },
+        { time: "12:04:02", message: "Ghost ships detected in sector B" },
+        { time: "12:04:15", message: "SNR drop alert - multiple vessels affected" },
+        { time: "12:04:30", message: "Jamming attack detected - blackout imminent" },
+    ]);
+    // 🧠 Static state for learning cards
+    const [learningCards] = useState([
+        {
+            id: 1,
+            icon: "📡",
+            title: "Spoofing: Drift",
+            shortDescription: "Signal spoofing causes the ship to slowly drift away from its real position.",
+            fullDescription: "GNSS spoofing is a cyberattack where false signals are transmitted to deceive receivers. The drift effect occurs when the attacker gradually shifts the fake signal away from the true position, causing the vessel to believe it's moving when it's not, or to follow a false trajectory.",
+            howItWorks: "An attacker broadcasts counterfeit GNSS signals that are slightly stronger than authentic satellite signals. The receiver locks onto these false signals, and the attacker slowly modifies the transmitted position data, causing a gradual 'drift' in the displayed location.",
+            detectionMethods: [
+                "Monitor signal-to-noise ratio (SNR) for unusual patterns",
+                "Cross-reference with inertial navigation systems",
+                "Compare multiple GNSS receivers",
+                "Check for impossible velocity or acceleration values"
+            ],
+            countermeasures: [
+                "Use cryptographic authentication (e.g., Galileo OS-NMA)",
+                "Deploy multi-constellation receivers",
+                "Implement signal monitoring and anomaly detection",
+                "Use anti-spoofing antennas with gain patterns"
+            ]
+        },
+        {
+            id: 2,
+            icon: "⚡",
+            title: "Jamming: Blackout",
+            shortDescription: "Jamming blocks GNSS reception completely, freezing the vessel's navigation.",
+            fullDescription: "GNSS jamming is a denial-of-service attack where powerful radio frequency interference overwhelms legitimate satellite signals. This causes a complete loss of positioning capability, forcing vessels to rely on backup navigation systems.",
+            howItWorks: "A jammer transmits high-power noise or continuous wave signals on GNSS frequencies (L1, L2, L5). The interference power is significantly higher than satellite signals, preventing the receiver from acquiring or tracking satellites. Modern jammers can affect areas from hundreds of meters to several kilometers.",
+            detectionMethods: [
+                "Monitor automatic gain control (AGC) levels",
+                "Detect loss of satellite lock across all frequencies",
+                "Use spectrum analyzers to identify interference sources",
+                "Implement carrier-to-noise ratio monitoring"
+            ],
+            countermeasures: [
+                "Deploy directional or controlled reception pattern antennas",
+                "Use adaptive filtering and digital signal processing",
+                "Implement multi-frequency and multi-constellation reception",
+                "Maintain backup navigation systems (INS, eLoran, celestial)"
+            ]
+        },
+        {
+            id: 3,
+            icon: "📶",
+            title: "SNR Drop",
+            shortDescription: "Gradual reduction in signal quality causes intermittent data loss.",
+            fullDescription: "Signal-to-Noise Ratio (SNR) degradation is often an early indicator of both natural interference and intentional attacks. A dropping SNR means the useful signal is becoming weaker relative to background noise, leading to position errors and eventually loss of fix.",
+            howItWorks: "SNR can degrade due to atmospheric conditions, but malicious SNR reduction often indicates low-power jamming or the early stages of a spoofing attack. Attackers may intentionally reduce SNR to test defenses or to mask the introduction of false signals.",
+            detectionMethods: [
+                "Continuous monitoring of C/N0 (carrier-to-noise density)",
+                "Track SNR trends over time and compare to baselines",
+                "Correlate SNR drops with position accuracy degradation",
+                "Use machine learning to identify abnormal SNR patterns"
+            ],
+            countermeasures: [
+                "Implement robust tracking algorithms",
+                "Use signal quality thresholds for position solution weighting",
+                "Deploy diversity reception with multiple antennas",
+                "Integrate with complementary positioning systems"
+            ]
+        },
+        {
+            id: 4,
+            icon: "🔀",
+            title: "Position Jump",
+            shortDescription: "Sudden position discontinuities indicate coordinated spoofing attacks.",
+            fullDescription: "Position jump attacks involve abrupt changes in reported location, often used to test victim response or to rapidly relocate a vessel's perceived position. This is more aggressive than drift spoofing and easier to detect but can cause immediate navigation errors.",
+            howItWorks: "The attacker transmits spoofed signals that suddenly shift the receiver's calculated position by a significant distance. This can be done by rapidly changing the pseudorange measurements or by switching between different spoofing signal sets.",
+            detectionMethods: [
+                "Monitor for impossible velocity or acceleration values",
+                "Compare position solutions across multiple receivers",
+                "Check consistency with inertial measurement units",
+                "Implement Kalman filtering with outlier rejection"
+            ],
+            countermeasures: [
+                "Use position solution consistency checks",
+                "Implement secure time and authentication",
+                "Deploy receiver autonomous integrity monitoring (RAIM)",
+                "Maintain redundant positioning sources"
+            ]
+        },
+        {
+            id: 5,
+            icon: "👻",
+            title: "Ghost Ships",
+            shortDescription: "Multiple false position reports create phantom vessel tracks.",
+            fullDescription: "Ghost ship attacks generate multiple false position solutions simultaneously, creating the illusion of additional vessels in the area. This can overwhelm traffic management systems and mask real vessel movements.",
+            howItWorks: "Sophisticated attackers transmit multiple sets of coordinated spoofing signals, each representing a different false position. Receivers may jump between these false solutions, or multiple receivers in an area may each lock onto different ghost positions.",
+            detectionMethods: [
+                "Correlate AIS data with GNSS positions",
+                "Use radar and visual confirmation",
+                "Implement multi-receiver position comparison",
+                "Monitor for correlated position anomalies across the fleet"
+            ],
+            countermeasures: [
+                "Integrate multiple independent positioning systems",
+                "Use authenticated AIS and GNSS signals",
+                "Deploy AI-based anomaly detection",
+                "Implement vessel traffic service monitoring"
+            ]
+        }
+    ]);
+
 
     // 🧩 Update game area on resize
     useEffect(() => {
@@ -95,13 +219,6 @@ export default function GameTestPage() {
         animateShip(ship, app, dimensions, scenario);
     }
 
-    // your animateShip and effect functions go here (no change) ...
-
-    function resetGame() {
-        const app = appRef.current;
-        if (app) app.ticker.started ? app.ticker.stop() : app.ticker.start();
-    }
-
     // 🧱 Ship creation
     function createShip(shipTexture, dim) {
         const ship = new Sprite(shipTexture);
@@ -146,7 +263,6 @@ export default function GameTestPage() {
             });
         }
     }
-
 
     // 🌀 Fade in/out effect (weak signal spoofing)
     function applyFadeEffect(ship, app, dim) {
@@ -449,10 +565,6 @@ export default function GameTestPage() {
         });
     }
 
-
-
-
-
     // ⏸️ Reset / Pause game
     function resetGame() {
         const app = appRef.current;
@@ -469,11 +581,70 @@ export default function GameTestPage() {
         }
     }
 
+    // 🎮 Game Control Functions
+    const handlePause = () => {
+        const app = appRef.current;
+        if (app && app.ticker.started) {
+            app.ticker.stop();
+            setIsPaused(true);
+            console.log('Game paused');
+        }
+    };
+
+    const handleResume = () => {
+        const app = appRef.current;
+        if (app && !app.ticker.started) {
+            app.ticker.start();
+            setIsPaused(false);
+            console.log('Game resumed');
+        }
+    };
+
+    const handleExit = () => {
+        const confirmExit = window.confirm('Are you sure you want to exit the game?');
+        if (confirmExit) {
+            // Navigate to main menu or home page
+            window.location.href = '/'; // Change to your home route
+        }
+    };
+
     // 🧱 Layout UI
     return (
         <div className="flex flex-col h-screen">
-            {/* 🧭 Top Toolbar */}
-            <div className="h-16 bg-red-500 border-b border-white/10 flex items-center px-4 gap-3">
+            {/* 🧭 Gaming HUD Toolbar */}
+            <GameToolbar score={120} time={"12:32"} onMenuToggle={() => setMenuOpen(!menuOpen)} />
+
+
+
+            {/* 🎮 Game Container */}
+            <div ref={containerRef} className="flex-1 relative" style={{ height: dimensions.height }} />
+
+
+
+            {/* Side Menu Component */}
+            <SideMenu
+                isOpen={menuOpen}
+                onClose={() => setMenuOpen(false)}
+                eventLogs={eventLogs}
+                learningCards={learningCards}
+            />
+
+
+
+
+            {/* Bottom Toolbar with Game Controls */}
+            <BottomToolbar
+                isPaused={isPaused}
+                onPause={handlePause}
+                onResume={handleResume}
+                onExit={handleExit}
+            />
+        </div>
+    );
+}
+
+
+{/* <div className="h-16 bg-red-500 border-b border-white/10 flex items-center px-4 gap-3">
                 <h1 className="text-white font-bold mr-4">City Under Threat</h1>
                 <button onClick={resetGame} className="bg-white/20 text-white px-3 py-1 rounded">Pause</button>
                 <button onClick={() => spawnShipWithScenario("fade")} className="bg-white/20 text-white px-3 py-1 rounded">Fade</button>
@@ -490,15 +661,4 @@ export default function GameTestPage() {
                     SNR Drop
                 </button>
 
-            </div>
-
-            {/* 🎮 Game Container */}
-            <div ref={containerRef} className="flex-1 relative" style={{ height: dimensions.height }} />
-
-            {/* 🧱 Bottom Toolbar */}
-            <div className="h-16 bg-[#071323] border-t border-white/10 flex items-center px-6">
-                <span className="text-white">Game Controls</span>
-            </div>
-        </div>
-    );
-}
+            </div> */}

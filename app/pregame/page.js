@@ -96,6 +96,12 @@ export default function GameplayPage() {
         return () => window.removeEventListener("keydown", onKey);
     }, []);
 
+    async function playNowClicked() {
+        // Navigate to the main game page by next router
+        window.location.href = "/gametest";
+
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-[#03050a] via-[#061026] to-[#020209] px-4 py-12">
             <div className="w-full max-w-4xl bg-black/50 backdrop-blur-sm border border-white/6 rounded-xl shadow-lg overflow-hidden">
@@ -156,7 +162,7 @@ export default function GameplayPage() {
                         <div className="flex items-center gap-3">
                             {index === slides.length - 1 ? (
                                 <button
-                                    onClick={() => alert("Proceeding to attack identification (placeholder)")}
+                                    onClick={() => playNowClicked()}
                                     className="px-4 py-2 bg-linear-to-r from-red-600 to-rose-600 text-white font-bold rounded-lg"
                                 >
                                     Yes — I will figure it out

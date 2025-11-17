@@ -181,6 +181,13 @@ export default function GameTestPage() {
             texturesRef.current = { seaTexture, portTexture, shipTexture };
 
             createBackground(gameScene, seaTexture, portTexture, dimensions);
+
+            spawnShipWithScenario("drift");
+            spawnShipWithScenario("jump");
+            spawnShipWithScenario("slow");
+            spawnShipWithScenario("ghost");
+            spawnShipWithScenario("blackout");
+            spawnShipWithScenario("snr");
         };
 
         initGame();
@@ -249,7 +256,7 @@ export default function GameTestPage() {
 
 
 
-        alert("new ship is spawned with " + scenario + " effect!");
+        // alert("new ship is spawned with " + scenario + " effect!");
 
 
         if (!["blackout"].includes(scenario)) {

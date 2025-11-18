@@ -11,7 +11,7 @@ export default function SideMenu({ isOpen, onClose, eventLogs = [], learningCard
             {/* Sidebar Menu */}
             <div
                 className={`fixed top-14 md:top-16 right-0 h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] 
-                            w-full sm:w-96 bg-gradient-to-b from-[#091121] to-[#04070f] 
+                            w-full sm:w-[85%] md:w-96 bg-gradient-to-b from-[#091121] to-[#04070f] 
                             border-l border-cyan-500/30 shadow-[0_0_20px_#00ffff60]
                             transition-transform duration-500 ease-in-out z-50
                             ${isOpen ? "translate-x-0" : "translate-x-full"}`}

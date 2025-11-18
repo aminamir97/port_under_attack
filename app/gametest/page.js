@@ -4,6 +4,186 @@ import { Application, Container, Assets, Sprite, TilingSprite, Text, Graphics } 
 import GameToolbar from "../components/GameToolbar";
 import SideMenu from "../components/SideMenu";
 import BottomToolbar from "../components/BottomToolbar";
+import LevelModal from "../components/LevelModal";
+
+const modalsDefault = {
+    fade: {
+        title: "Signal Fade",
+        description: "The ship's GNSS signal intermittently fades in and out, simulating weak signal spoofing. Players must recognize the fading pattern and take corrective actions to maintain accurate navigation.",
+        issuesList: ["jamming_fade", "spoofing_drift", "jamming_blackout"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    },
+    jump: {
+        title: "Position Jump",
+        description: "The ship's position suddenly jumps to different locations on the map, indicating a coordinated spoofing attack. The attacker is transmitting false signals causing rapid position discontinuities.",
+        issuesList: ["spoofing_position_jump", "jamming_fade", "spoofing_drift"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    },
+    slow: {
+        title: "Slow Drift",
+        description: "The ship exhibits delayed and erratic movement patterns, slowly drifting from its intended course. This suggests a meaconing or replay attack affecting its navigation accuracy.",
+        issuesList: ["spoofing_drift", "jamming_blackout", "spoofing_position_jump"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    },
+    ghost: {
+        title: "Ghost Ships",
+        description: "Multiple phantom ship positions appear simultaneously around the real vessel. The attacker is transmitting multiple coordinated spoofing signals to create false position solutions.",
+        issuesList: ["spoofing_ghost", "jamming_fade", "spoofing_drift"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    },
+    blackout: {
+        title: "Complete Blackout",
+        description: "The ship's GNSS reception is completely blocked, freezing all navigation capabilities. This is a jamming attack using powerful interference to overwhelm legitimate satellite signals.",
+        issuesList: ["jamming_blackout", "spoofing_drift", "jamming_snr_drop"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    },
+    snr: {
+        title: "SNR Drop",
+        description: "The ship's signal quality is gradually degrading with fluctuating Signal-to-Noise Ratio. This could indicate low-power jamming or early stages of a spoofing attack testing defenses.",
+        issuesList: ["jamming_snr_drop", "spoofing_position_jump", "jamming_blackout"],
+        correctIssueIndex: 0,
+        image: "images/gameplay/cargo.png"
+    }
+};
+
+const gameLevelsDefault = [
+    { scenario: "fade", learned: false, modalInfo: modalsDefault.fade },
+    { scenario: "jump", learned: false, modalInfo: modalsDefault.jump },
+    { scenario: "slow", learned: false, modalInfo: modalsDefault.slow },
+    { scenario: "ghost", learned: false, modalInfo: modalsDefault.ghost },
+    { scenario: "blackout", learned: false, modalInfo: modalsDefault.blackout },
+    { scenario: "snr", learned: false, modalInfo: modalsDefault.snr }
+];
+
+// 📚 Static library of all learning cards (one per scenario)
+const allLearningCardsLibrary = [
+    {
+        id: "fade",
+        icon: "🌫️",
+        title: "Signal Fade",
+        shortDescription: "Intermittent signal fading simulates weak signal spoofing attacks.",
+        fullDescription: "Signal fade attacks involve intermittent manipulation of GNSS signals, causing them to fade in and out. This creates uncertainty in positioning and can mask other spoofing techniques. Attackers use this to test defenses or create confusion before launching more sophisticated attacks.",
+        howItWorks: "The attacker modulates the power of false GNSS signals, causing the receiver to intermittently lose and reacquire satellite lock. This creates a fading pattern that can be mistaken for natural signal degradation.",
+        detectionMethods: [
+            "Monitor signal strength patterns for artificial periodicity",
+            "Compare fade patterns across multiple receivers",
+            "Check for correlation with environmental conditions",
+            "Use signal quality monitoring systems"
+        ],
+        countermeasures: [
+            "Implement signal strength anomaly detection",
+            "Use redundant positioning systems",
+            "Deploy advanced signal processing filters",
+            "Maintain receiver diversity"
+        ]
+    },
+    {
+        id: "jump",
+        icon: "🔀",
+        title: "Position Jump",
+        shortDescription: "Sudden position discontinuities indicate coordinated spoofing attacks.",
+        fullDescription: "Position jump attacks involve abrupt changes in reported location, often used to test victim response or to rapidly relocate a vessel's perceived position. This is more aggressive than drift spoofing and easier to detect but can cause immediate navigation errors.",
+        howItWorks: "The attacker transmits spoofed signals that suddenly shift the receiver's calculated position by a significant distance. This can be done by rapidly changing the pseudorange measurements or by switching between different spoofing signal sets.",
+        detectionMethods: [
+            "Monitor for impossible velocity or acceleration values",
+            "Compare position solutions across multiple receivers",
+            "Check consistency with inertial measurement units",
+            "Implement Kalman filtering with outlier rejection"
+        ],
+        countermeasures: [
+            "Use position solution consistency checks",
+            "Implement secure time and authentication",
+            "Deploy receiver autonomous integrity monitoring (RAIM)",
+            "Maintain redundant positioning sources"
+        ]
+    },
+    {
+        id: "slow",
+        icon: "📡",
+        title: "Slow Drift",
+        shortDescription: "Gradual position drift caused by meaconing or replay attacks.",
+        fullDescription: "Slow drift attacks gradually shift a vessel's perceived position over time through signal spoofing. This subtle approach is harder to detect than sudden jumps and can lead ships dangerously off course without immediate alarm.",
+        howItWorks: "An attacker broadcasts counterfeit GNSS signals that are slightly stronger than authentic satellite signals. The receiver locks onto these false signals, and the attacker slowly modifies the transmitted position data, causing a gradual 'drift' in the displayed location.",
+        detectionMethods: [
+            "Monitor signal-to-noise ratio (SNR) for unusual patterns",
+            "Cross-reference with inertial navigation systems",
+            "Compare multiple GNSS receivers",
+            "Check for impossible velocity or acceleration values"
+        ],
+        countermeasures: [
+            "Use cryptographic authentication (e.g., Galileo OS-NMA)",
+            "Deploy multi-constellation receivers",
+            "Implement signal monitoring and anomaly detection",
+            "Use anti-spoofing antennas with gain patterns"
+        ]
+    },
+    {
+        id: "ghost",
+        icon: "👻",
+        title: "Ghost Ships",
+        shortDescription: "Multiple false position reports create phantom vessel tracks.",
+        fullDescription: "Ghost ship attacks generate multiple false position solutions simultaneously, creating the illusion of additional vessels in the area. This can overwhelm traffic management systems and mask real vessel movements.",
+        howItWorks: "Sophisticated attackers transmit multiple sets of coordinated spoofing signals, each representing a different false position. Receivers may jump between these false solutions, or multiple receivers in an area may each lock onto different ghost positions.",
+        detectionMethods: [
+            "Correlate AIS data with GNSS positions",
+            "Use radar and visual confirmation",
+            "Implement multi-receiver position comparison",
+            "Monitor for correlated position anomalies across the fleet"
+        ],
+        countermeasures: [
+            "Integrate multiple independent positioning systems",
+            "Use authenticated AIS and GNSS signals",
+            "Deploy AI-based anomaly detection",
+            "Implement vessel traffic service monitoring"
+        ]
+    },
+    {
+        id: "blackout",
+        icon: "⚡",
+        title: "Complete Blackout",
+        shortDescription: "Jamming blocks GNSS reception completely, freezing the vessel's navigation.",
+        fullDescription: "GNSS jamming is a denial-of-service attack where powerful radio frequency interference overwhelms legitimate satellite signals. This causes a complete loss of positioning capability, forcing vessels to rely on backup navigation systems.",
+        howItWorks: "A jammer transmits high-power noise or continuous wave signals on GNSS frequencies (L1, L2, L5). The interference power is significantly higher than satellite signals, preventing the receiver from acquiring or tracking satellites. Modern jammers can affect areas from hundreds of meters to several kilometers.",
+        detectionMethods: [
+            "Monitor automatic gain control (AGC) levels",
+            "Detect loss of satellite lock across all frequencies",
+            "Use spectrum analyzers to identify interference sources",
+            "Implement carrier-to-noise ratio monitoring"
+        ],
+        countermeasures: [
+            "Deploy directional or controlled reception pattern antennas",
+            "Use adaptive filtering and digital signal processing",
+            "Implement multi-frequency and multi-constellation reception",
+            "Maintain backup navigation systems (INS, eLoran, celestial)"
+        ]
+    },
+    {
+        id: "snr",
+        icon: "📶",
+        title: "SNR Drop",
+        shortDescription: "Gradual reduction in signal quality causes intermittent data loss.",
+        fullDescription: "Signal-to-Noise Ratio (SNR) degradation is often an early indicator of both natural interference and intentional attacks. A dropping SNR means the useful signal is becoming weaker relative to background noise, leading to position errors and eventually loss of fix.",
+        howItWorks: "SNR can degrade due to atmospheric conditions, but malicious SNR reduction often indicates low-power jamming or the early stages of a spoofing attack. Attackers may intentionally reduce SNR to test defenses or to mask the introduction of false signals.",
+        detectionMethods: [
+            "Continuous monitoring of C/N0 (carrier-to-noise density)",
+            "Track SNR trends over time and compare to baselines",
+            "Correlate SNR drops with position accuracy degradation",
+            "Use machine learning to identify abnormal SNR patterns"
+        ],
+        countermeasures: [
+            "Implement robust tracking algorithms",
+            "Use signal quality thresholds for position solution weighting",
+            "Deploy diversity reception with multiple antennas",
+            "Integrate with complementary positioning systems"
+        ]
+    }
+];
+
 
 
 export default function GameTestPage() {
@@ -14,11 +194,18 @@ export default function GameTestPage() {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [menuOpen, setMenuOpen] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const [score, setScore] = useState(0);
+    const [scoreChange, setScoreChange] = useState(null); // For showing +50/-20 animation
+    const [gameLevels, setGameLevels] = useState(gameLevelsDefault);
+    const [showLevelModal, setShowLevelModal] = useState(false);
+    const [currentLevel, setCurrentLevel] = useState(null);
+    const [learningCards, setLearningCards] = useState([]); // Dynamic list of unlocked cards
+
 
 
 
     // 🌍 Global values
-    const BASE_SPEED = 0.5;
+    const BASE_SPEED = 1.5;
     let PORT_WIDTH = 0;
     let SEA_WIDTH = 0;
     // 📊 Static state for event logs
@@ -33,109 +220,6 @@ export default function GameTestPage() {
         { time: "12:04:02", message: "Ghost ships detected in sector B" },
         { time: "12:04:15", message: "SNR drop alert - multiple vessels affected" },
         { time: "12:04:30", message: "Jamming attack detected - blackout imminent" },
-    ]);
-    // 🧠 Static state for learning cards
-    const [learningCards] = useState([
-        {
-            id: 1,
-            icon: "📡",
-            title: "Spoofing: Drift",
-            shortDescription: "Signal spoofing causes the ship to slowly drift away from its real position.",
-            fullDescription: "GNSS spoofing is a cyberattack where false signals are transmitted to deceive receivers. The drift effect occurs when the attacker gradually shifts the fake signal away from the true position, causing the vessel to believe it's moving when it's not, or to follow a false trajectory.",
-            howItWorks: "An attacker broadcasts counterfeit GNSS signals that are slightly stronger than authentic satellite signals. The receiver locks onto these false signals, and the attacker slowly modifies the transmitted position data, causing a gradual 'drift' in the displayed location.",
-            detectionMethods: [
-                "Monitor signal-to-noise ratio (SNR) for unusual patterns",
-                "Cross-reference with inertial navigation systems",
-                "Compare multiple GNSS receivers",
-                "Check for impossible velocity or acceleration values"
-            ],
-            countermeasures: [
-                "Use cryptographic authentication (e.g., Galileo OS-NMA)",
-                "Deploy multi-constellation receivers",
-                "Implement signal monitoring and anomaly detection",
-                "Use anti-spoofing antennas with gain patterns"
-            ]
-        },
-        {
-            id: 2,
-            icon: "⚡",
-            title: "Jamming: Blackout",
-            shortDescription: "Jamming blocks GNSS reception completely, freezing the vessel's navigation.",
-            fullDescription: "GNSS jamming is a denial-of-service attack where powerful radio frequency interference overwhelms legitimate satellite signals. This causes a complete loss of positioning capability, forcing vessels to rely on backup navigation systems.",
-            howItWorks: "A jammer transmits high-power noise or continuous wave signals on GNSS frequencies (L1, L2, L5). The interference power is significantly higher than satellite signals, preventing the receiver from acquiring or tracking satellites. Modern jammers can affect areas from hundreds of meters to several kilometers.",
-            detectionMethods: [
-                "Monitor automatic gain control (AGC) levels",
-                "Detect loss of satellite lock across all frequencies",
-                "Use spectrum analyzers to identify interference sources",
-                "Implement carrier-to-noise ratio monitoring"
-            ],
-            countermeasures: [
-                "Deploy directional or controlled reception pattern antennas",
-                "Use adaptive filtering and digital signal processing",
-                "Implement multi-frequency and multi-constellation reception",
-                "Maintain backup navigation systems (INS, eLoran, celestial)"
-            ]
-        },
-        {
-            id: 3,
-            icon: "📶",
-            title: "SNR Drop",
-            shortDescription: "Gradual reduction in signal quality causes intermittent data loss.",
-            fullDescription: "Signal-to-Noise Ratio (SNR) degradation is often an early indicator of both natural interference and intentional attacks. A dropping SNR means the useful signal is becoming weaker relative to background noise, leading to position errors and eventually loss of fix.",
-            howItWorks: "SNR can degrade due to atmospheric conditions, but malicious SNR reduction often indicates low-power jamming or the early stages of a spoofing attack. Attackers may intentionally reduce SNR to test defenses or to mask the introduction of false signals.",
-            detectionMethods: [
-                "Continuous monitoring of C/N0 (carrier-to-noise density)",
-                "Track SNR trends over time and compare to baselines",
-                "Correlate SNR drops with position accuracy degradation",
-                "Use machine learning to identify abnormal SNR patterns"
-            ],
-            countermeasures: [
-                "Implement robust tracking algorithms",
-                "Use signal quality thresholds for position solution weighting",
-                "Deploy diversity reception with multiple antennas",
-                "Integrate with complementary positioning systems"
-            ]
-        },
-        {
-            id: 4,
-            icon: "🔀",
-            title: "Position Jump",
-            shortDescription: "Sudden position discontinuities indicate coordinated spoofing attacks.",
-            fullDescription: "Position jump attacks involve abrupt changes in reported location, often used to test victim response or to rapidly relocate a vessel's perceived position. This is more aggressive than drift spoofing and easier to detect but can cause immediate navigation errors.",
-            howItWorks: "The attacker transmits spoofed signals that suddenly shift the receiver's calculated position by a significant distance. This can be done by rapidly changing the pseudorange measurements or by switching between different spoofing signal sets.",
-            detectionMethods: [
-                "Monitor for impossible velocity or acceleration values",
-                "Compare position solutions across multiple receivers",
-                "Check consistency with inertial measurement units",
-                "Implement Kalman filtering with outlier rejection"
-            ],
-            countermeasures: [
-                "Use position solution consistency checks",
-                "Implement secure time and authentication",
-                "Deploy receiver autonomous integrity monitoring (RAIM)",
-                "Maintain redundant positioning sources"
-            ]
-        },
-        {
-            id: 5,
-            icon: "👻",
-            title: "Ghost Ships",
-            shortDescription: "Multiple false position reports create phantom vessel tracks.",
-            fullDescription: "Ghost ship attacks generate multiple false position solutions simultaneously, creating the illusion of additional vessels in the area. This can overwhelm traffic management systems and mask real vessel movements.",
-            howItWorks: "Sophisticated attackers transmit multiple sets of coordinated spoofing signals, each representing a different false position. Receivers may jump between these false solutions, or multiple receivers in an area may each lock onto different ghost positions.",
-            detectionMethods: [
-                "Correlate AIS data with GNSS positions",
-                "Use radar and visual confirmation",
-                "Implement multi-receiver position comparison",
-                "Monitor for correlated position anomalies across the fleet"
-            ],
-            countermeasures: [
-                "Integrate multiple independent positioning systems",
-                "Use authenticated AIS and GNSS signals",
-                "Deploy AI-based anomaly detection",
-                "Implement vessel traffic service monitoring"
-            ]
-        }
     ]);
 
 
@@ -182,7 +266,7 @@ export default function GameTestPage() {
 
             createBackground(gameScene, seaTexture, portTexture, dimensions);
 
-            spawnShipWithScenario("drift");
+            spawnShipWithScenario("fade");
             spawnShipWithScenario("jump");
             spawnShipWithScenario("slow");
             spawnShipWithScenario("ghost");
@@ -221,9 +305,20 @@ export default function GameTestPage() {
         ship.anchor.set(0.5);
         ship.scale.set(0.5);
         ship.x = dimensions.width + 100;
-        ship.y = dimensions.height / 2 + (Math.random() - 0.5) * 200;
+        // Spawn ship at random Y position across full height with margin for visibility
+        const shipHeight = shipTexture.height * 0.5; // account for scale
+        const margin = shipHeight / 2 + 20; // margin from top/bottom edges
+        ship.y = margin + Math.random() * (dimensions.height - 2 * margin);
+        ship.label = "AminShip_" + scenario;
+        ship.eventMode = 'static';
+        ship.on('pointerdown', (ev) => {
+            console.log('Sprite clicked!');
+            shipIsClicked(ev, ship, scenario);
+        });
         gameScene.addChild(ship);
         animateShip(ship, app, dimensions, scenario);
+
+        console.log(`all elements: `, gameScene.children);
     }
 
     // 🧱 Ship creation
@@ -247,7 +342,7 @@ export default function GameTestPage() {
         const speed = BASE_SPEED;
 
         // Trigger different spoofing behaviors
-        if (scenario === "fade") applyFadeEffect(ship, app, dim);
+        if (scenario === "fade") applyFadeEffect(ship, app, dim, scenario);
         if (scenario === "jump") applyPositionJumpEffect(ship, app, dim);
         if (scenario === "slow") applySlowDriftEffect(ship, app, dim);
         if (scenario === "ghost") applyDuplicateGhostEffect(ship, app, dim);
@@ -259,20 +354,28 @@ export default function GameTestPage() {
         // alert("new ship is spawned with " + scenario + " effect!");
 
 
+        // if (!["blackout"].includes(scenario)) {
+        //     app.ticker.add(() => {
+        //         ship.x -= speed;
+        //         if (ship.x < -100) {
+        //             ship.x = dim.width + 100;
+        //             ship.alpha = 1;
+        //             // ship.rotation = Math.PI;
+        //         }
+        //     });
+        // }
         if (!["blackout"].includes(scenario)) {
             app.ticker.add(() => {
                 ship.x -= speed;
-                if (ship.x < -100) {
-                    ship.x = dim.width + 100;
-                    ship.alpha = 1;
-                    ship.rotation = Math.PI;
-                }
+
+                // 🎯 Use centralized collision handler
+                handlePortCollision(ship, app, dim, scenario);
             });
         }
     }
 
     // 🌀 Fade in/out effect (weak signal spoofing)
-    function applyFadeEffect(ship, app, dim) {
+    function applyFadeEffect(ship, app, dim, scenario) {
         let fadeDirection = -1;
         let fadeSpeed = 0.01;
         let fadeActive = false;
@@ -283,8 +386,9 @@ export default function GameTestPage() {
                 fadeActive = true;
             }
 
-            // Deactivate once it passes the port zone
+            // Check for port collision
             if (ship.x < PORT_WIDTH + ship.width) {
+                handlePortCollision(ship, app, dim, scenario);
                 fadeActive = false;
                 ship.alpha = 1;
             }
@@ -328,11 +432,8 @@ export default function GameTestPage() {
                 }, 200);
             }
 
-            // Respawn if ship reaches port or goes off screen
-            if (ship.x < PORT_WIDTH + ship.width) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-            }
+            // 🎯 Use centralized collision handler
+            handlePortCollision(ship, app, dim, "jump");
         });
     }
 
@@ -368,13 +469,8 @@ export default function GameTestPage() {
             // move ship
             ship.x -= currentSpeed;
 
-            // reset when leaving left side
-            if (ship.x < -100) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-                ship.tint = 0xffffff;
-                currentSpeed = BASE_SPEED;
-            }
+            // 🎯 Use centralized collision handler
+            handlePortCollision(ship, app, dim, "slow");
         });
     }
 
@@ -423,13 +519,9 @@ export default function GameTestPage() {
                 ghost.alpha = 0.6 + Math.sin(app.ticker.lastTime / 400 + i) * 0.1;
             });
 
-            // when main ship exits the screen -> respawn and recreate ghosts
-            if (ship.x < PORT_WIDTH + ship.width) {
-                // reset main ship
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-
-                // recreate ghosts at new position (with new random count)
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "ghost")) {
+                // When ship respawns, recreate ghosts
                 createGhosts();
             }
         });
@@ -483,19 +575,18 @@ export default function GameTestPage() {
                         ship.alpha = 1;
                         ship.tint = 0xffffff;
                         ship.x = dim.width + 100;
-                        ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
+                        // Spawn ship at random Y position across full height with margin
+                        const shipHeight = ship.height;
+                        const margin = shipHeight / 2 + 20;
+                        ship.y = margin + Math.random() * (dim.height - 2 * margin);
                         isFrozen = false;
                         timerText.text = "";
                     }
                 }
             }
 
-            // If ship hits the port before blackout, respawn
-            if (ship.x < PORT_WIDTH + ship.width) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
-                ship.alpha = 1;
-                ship.tint = 0xffffff;
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "blackout")) {
                 timerText.text = "";
                 isFrozen = false;
             }
@@ -560,10 +651,9 @@ export default function GameTestPage() {
 
             snrBar.rect(-25, -8, barWidth, 6).fill({ color });
 
-            // ♻️ respawn if reaches port
-            if (ship.x < PORT_WIDTH + ship.width) {
-                ship.x = dim.width + 100;
-                ship.y = dim.height / 2 + (Math.random() - 0.5) * 200;
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "snr")) {
+                // Reset SNR visuals on respawn
                 currentSignal = 1;
                 targetSignal = 1;
                 glow.alpha = 0.2;
@@ -615,29 +705,251 @@ export default function GameTestPage() {
         }
     };
 
+    async function shipIsClicked(ev, ship, scenario) {
+        console.log("Ship clicked event:", ship);
+
+        // Check if learning mode is active
+        const level = gameLevels.find(l => l.scenario === scenario && !l.learned);
+
+        if (level) {
+            // Pause the game
+            handlePause();
+
+            // Show the modal
+            setCurrentLevel(level);
+            setShowLevelModal(true);
+        }
+    }
+
+    // ✅ Handle correct answer
+    function handleCorrectAnswer(scenario) {
+        // Mark level as learned
+        setGameLevels(prevLevels =>
+            prevLevels.map(level =>
+                level.scenario === scenario
+                    ? { ...level, learned: true }
+                    : level
+            )
+        );
+
+        // Add 50 points
+        setScore(prevScore => prevScore + 50);
+        setScoreChange(+50);
+        setTimeout(() => setScoreChange(null), 1500);
+        setScoreChange(+50);
+        setTimeout(() => setScoreChange(null), 1500);
+
+        // Add learning card if not already unlocked
+        const cardAlreadyUnlocked = learningCards.some(card => card.id === scenario);
+        if (!cardAlreadyUnlocked) {
+            const cardToUnlock = allLearningCardsLibrary.find(card => card.id === scenario);
+            if (cardToUnlock) {
+                setLearningCards(prev => [...prev, cardToUnlock]);
+                console.log(`🎓 Learning card "${cardToUnlock.title}" unlocked!`);
+            }
+        }
+
+        // Find and explode the ship
+        const gameScene = gameSceneRef.current;
+        const ship = gameScene.children.find(child =>
+            child.label && child.label.includes(scenario)
+        );
+
+        if (ship) {
+            explodeShip(ship, appRef.current, dimensions, () => {
+                handleResume();
+            });
+        } else {
+            handleResume();
+        }
+
+        console.log('✅ Correct answer - ship neutralized!');
+    }
+
+    // ❌ Handle wrong answer
+    function handleWrongAnswer() {
+        // Subtract 20 points (minimum 0)
+        setScore(prevScore => Math.max(0, prevScore - 20));
+        setScoreChange(-20);
+        setTimeout(() => setScoreChange(null), 1500);
+        setScoreChange(-20);
+        setTimeout(() => setScoreChange(null), 1500);
+
+        // Resume game - ship continues moving
+        handleResume();
+
+        console.log('❌ Wrong answer - ship continues to port!');
+    }
+
+    function handleModalClose(solved) {
+        setShowLevelModal(false);
+
+        if (solved && currentLevel) {
+            handleCorrectAnswer(currentLevel.scenario);
+        } else if (!solved && currentLevel) {
+            handleWrongAnswer();
+        } else {
+            // Modal cancelled without answer
+            handleResume();
+        }
+
+        setCurrentLevel(null);
+    }
+
+    function handleModalSolve(isCorrect) {
+        handleModalClose(isCorrect);
+    }
+
+    // 💥 Explosion effect - destroys ship with animation then respawns
+    function explodeShip(ship, app, dim, callback = null) {
+        const gameScene = gameSceneRef.current;
+        if (!gameScene) return;
+
+        handleResume()
+
+        // 🔴 Create explosion graphics
+        const explosion = new Container();
+        explosion.x = ship.x;
+        explosion.y = ship.y;
+        gameScene.addChild(explosion);
+
+        // Multiple explosion particles
+        const particleCount = 20;
+        const particles = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = new Graphics();
+            const size = 5 + Math.random() * 10;
+            particle.circle(0, 0, size);
+            particle.fill({ color: Math.random() > 0.5 ? 0xff4400 : 0xffaa00 }); // orange/red
+
+            // Random velocity for each particle
+            particle.vx = (Math.random() - 0.5) * 10;
+            particle.vy = (Math.random() - 0.5) * 10;
+            particle.life = 1; // will fade out
+
+            explosion.addChild(particle);
+            particles.push(particle);
+        }
+
+        // 💨 Create smoke effect
+        const smoke = new Graphics();
+        smoke.circle(0, 0, 50);
+        smoke.fill({ color: 0x222222, alpha: 0.5 });
+        explosion.addChild(smoke);
+
+        // 🔊 Visual flash effect on ship
+        ship.tint = 0xff0000;
+        ship.alpha = 0.5;
+
+        // 🎬 Animation
+        let explosionFrame = 0;
+        const explosionDuration = 80; // frames (~1 second)
+
+        const explosionTicker = () => {
+            explosionFrame++;
+
+            // Animate particles
+            particles.forEach(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.vy += 0.2; // gravity
+                particle.life -= 0.02;
+                particle.alpha = particle.life;
+                particle.scale.set(particle.life);
+            });
+
+            // Expand smoke
+            smoke.scale.set(1 + explosionFrame / 30);
+            smoke.alpha = Math.max(0, 0.5 - explosionFrame / 60);
+
+            // Fade out ship
+            ship.alpha = Math.max(0, 1 - explosionFrame / 30);
+
+            // End explosion
+            if (explosionFrame >= explosionDuration) {
+                app.ticker.remove(explosionTicker);
+
+                // Clean up
+                explosion.destroy({ children: true });
+
+                // Reset ship to starting position
+                ship.x = dim.width + 100;
+                // Spawn ship at random Y position across full height with margin
+                const shipHeight = ship.height;
+                const margin = shipHeight / 2 + 20;
+                ship.y = margin + Math.random() * (dim.height - 2 * margin);
+                ship.alpha = 1;
+                ship.tint = 0xffffff;
+
+                // Call callback if provided
+                if (callback) callback(ship);
+
+                console.log('💥 Ship exploded and respawned!');
+            }
+        };
+
+        app.ticker.add(explosionTicker);
+    }
+
+    // 🎯 Centralized port collision detection and handling
+    function handlePortCollision(ship, app, dim, scenario) {
+        const reachedPort = ship.x < PORT_WIDTH + ship.width;
+
+        if (reachedPort) {
+            console.log(`🚨 Ship with scenario "${scenario}" reached the port!`);
+
+            // Any ship that reaches port explodes and respawns
+            explodeShip(ship, app, dim, () => {
+                setScore(prevScore => Math.max(0, prevScore - 20));
+                setScoreChange(-20);
+                setTimeout(() => setScoreChange(null), 1500);
+                console.log('Ship respawned after port explosion');
+            });
+
+            ship.x = dim.width + 100; // reset position off-screen
+
+            return true; // collision occurred
+        }
+
+        return false; // no collision
+    }
+
     // 🧱 Layout UI
     return (
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-screen bg-slate-900">
             {/* 🧭 Gaming HUD Toolbar */}
-            <GameToolbar score={120} time={"12:32"} onMenuToggle={() => setMenuOpen(!menuOpen)} />
-
-
+            <GameToolbar score={score} time={"12:32"} scoreChange={scoreChange} onMenuToggle={() => {
+                const newMenuState = !menuOpen;
+                setMenuOpen(newMenuState);
+                // Pause when menu opens, resume when it closes
+                if (newMenuState) {
+                    handlePause();
+                } else {
+                    handleResume();
+                }
+            }} />
 
             {/* 🎮 Game Container */}
-            <div ref={containerRef} className="flex-1 relative" style={{ height: dimensions.height }} />
-
-
+            <div ref={containerRef} className="flex-1 relative" />
 
             {/* Side Menu Component */}
             <SideMenu
                 isOpen={menuOpen}
-                onClose={() => setMenuOpen(false)}
+                onClose={() => {
+                    setMenuOpen(false);
+                    handleResume(); // Resume game when menu closes
+                }}
                 eventLogs={eventLogs}
                 learningCards={learningCards}
             />
-
-
-
+            {/* Level Modal */}
+            <LevelModal
+                isOpen={showLevelModal}
+                levelInfo={currentLevel}
+                onClose={handleModalClose}
+                onSolve={handleModalSolve}
+            />
 
             {/* Bottom Toolbar with Game Controls */}
             <BottomToolbar

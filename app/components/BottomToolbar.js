@@ -8,27 +8,27 @@ export default function BottomToolbar({
 }) {
     return (
         <div className="h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-t-2 border-amber-600/50 
-                        flex items-center justify-between px-6 shadow-[0_-4px_20px_rgba(217,119,6,0.3)]">
+                        flex items-center justify-between px-4 md:px-6 shadow-[0_-4px_20px_rgba(217,119,6,0.3)]">
 
             {/* Left Section - Game Status */}
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full animate-pulse ${isPaused ? 'bg-red-500' : 'bg-green-500'}`} />
-                    <span className="text-slate-300 text-sm font-semibold uppercase tracking-wider">
+            <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full animate-pulse ${isPaused ? 'bg-red-500' : 'bg-green-500'}`} />
+                    <span className="text-slate-300 text-xs md:text-sm font-semibold uppercase tracking-wider">
                         {isPaused ? 'PAUSED' : 'ACTIVE'}
                     </span>
                 </div>
             </div>
 
             {/* Center Section - Game Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
                 {/* Pause/Resume Button */}
                 {!isPaused ? (
                     <button
                         onClick={onPause}
-                        className="group relative px-6 py-2.5 bg-gradient-to-br from-amber-600 to-amber-700 
+                        className="group relative p-2.5 md:px-6 md:py-2.5 bg-gradient-to-br from-amber-600 to-amber-700 
                                    hover:from-amber-500 hover:to-amber-600
-                                   border-2 border-amber-400/50 hover:border-amber-300
+                                   border border-amber-400/50 md:border-2 hover:border-amber-300
                                    rounded-lg shadow-lg hover:shadow-amber-500/50
                                    transition-all duration-200 transform hover:scale-105"
                     >
@@ -37,7 +37,7 @@ export default function BottomToolbar({
                                 <div className="w-1 h-4 bg-slate-900 rounded-sm"></div>
                                 <div className="w-1 h-4 bg-slate-900 rounded-sm"></div>
                             </div>
-                            <span className="text-slate-900 font-bold uppercase tracking-wider text-sm">
+                            <span className="text-slate-900 font-bold uppercase tracking-wider text-xs md:text-sm hidden md:inline">
                                 Pause
                             </span>
                         </div>
@@ -47,15 +47,15 @@ export default function BottomToolbar({
                 ) : (
                     <button
                         onClick={onResume}
-                        className="group relative px-6 py-2.5 bg-gradient-to-br from-green-600 to-green-700 
+                        className="group relative p-2.5 md:px-6 md:py-2.5 bg-gradient-to-br from-green-600 to-green-700 
                                    hover:from-green-500 hover:to-green-600
-                                   border-2 border-green-400/50 hover:border-green-300
+                                   border border-green-400/50 md:border-2 hover:border-green-300
                                    rounded-lg shadow-lg hover:shadow-green-500/50
                                    transition-all duration-200 transform hover:scale-105"
                     >
                         <div className="flex items-center gap-2">
                             <div className="w-0 h-0 border-l-[10px] border-l-slate-900 border-y-[6px] border-y-transparent"></div>
-                            <span className="text-slate-900 font-bold uppercase tracking-wider text-sm">
+                            <span className="text-slate-900 font-bold uppercase tracking-wider text-xs md:text-sm hidden md:inline">
                                 Resume
                             </span>
                         </div>
@@ -65,8 +65,8 @@ export default function BottomToolbar({
 
                 {/* Restart Button */}
                 <button
-                    className="group relative px-5 py-2.5 bg-slate-700/80 hover:bg-slate-600/80
-                               border-2 border-slate-500/50 hover:border-slate-400
+                    className="group relative p-2.5 md:px-5 md:py-2.5 bg-slate-700/80 hover:bg-slate-600/80
+                               border border-slate-500/50 md:border-2 hover:border-slate-400
                                rounded-lg shadow-lg hover:shadow-slate-500/50
                                transition-all duration-200 transform hover:scale-105"
                 >
@@ -75,7 +75,7 @@ export default function BottomToolbar({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        <span className="text-slate-300 font-bold uppercase tracking-wider text-sm">
+                        <span className="text-slate-300 font-bold uppercase tracking-wider text-xs md:text-sm hidden md:inline">
                             Restart
                         </span>
                     </div>
@@ -83,12 +83,12 @@ export default function BottomToolbar({
             </div>
 
             {/* Right Section - Exit Button */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
                 <button
                     onClick={onExit}
-                    className="group relative px-5 py-2.5 bg-gradient-to-br from-red-700 to-red-800 
+                    className="group relative p-2.5 md:px-5 md:py-2.5 bg-gradient-to-br from-red-700 to-red-800 
                                hover:from-red-600 hover:to-red-700
-                               border-2 border-red-500/50 hover:border-red-400
+                               border border-red-500/50 md:border-2 hover:border-red-400
                                rounded-lg shadow-lg hover:shadow-red-500/50
                                transition-all duration-200 transform hover:scale-105"
                 >
@@ -97,7 +97,7 @@ export default function BottomToolbar({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
-                        <span className="text-red-100 font-bold uppercase tracking-wider text-sm">
+                        <span className="text-red-100 font-bold uppercase tracking-wider text-xs md:text-sm hidden md:inline">
                             Exit
                         </span>
                     </div>

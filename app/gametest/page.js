@@ -205,7 +205,7 @@ export default function GameTestPage() {
 
 
     // 🌍 Global values
-    const BASE_SPEED = 1.5;
+    const BASE_SPEED = 0.5;
     let PORT_WIDTH = 0;
     let SEA_WIDTH = 0;
     // 📊 Static state for event logs
@@ -269,9 +269,9 @@ export default function GameTestPage() {
             spawnShipWithScenario("fade");
             spawnShipWithScenario("jump");
             spawnShipWithScenario("slow");
-            spawnShipWithScenario("ghost");
+            // spawnShipWithScenario("ghost");
             spawnShipWithScenario("blackout");
-            spawnShipWithScenario("snr");
+            // spawnShipWithScenario("snr");
         };
 
         initGame();

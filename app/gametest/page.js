@@ -222,7 +222,6 @@ export default function GameTestPage() {
         { time: "12:04:30", message: "Jamming attack detected - blackout imminent" },
     ]);
 
-
     // 🧩 Update game area on resize
     useEffect(() => {
         const updateDimensions = () => {
@@ -267,10 +266,10 @@ export default function GameTestPage() {
             createBackground(gameScene, seaTexture, portTexture, dimensions);
 
             spawnShipWithScenario("fade");
-            spawnShipWithScenario("jump");
-            spawnShipWithScenario("slow");
+            // spawnShipWithScenario("jump");
+            // spawnShipWithScenario("slow");
             // spawnShipWithScenario("ghost");
-            spawnShipWithScenario("blackout");
+            // spawnShipWithScenario("blackout");
             // spawnShipWithScenario("snr");
         };
 
@@ -317,8 +316,6 @@ export default function GameTestPage() {
         });
         gameScene.addChild(ship);
         animateShip(ship, app, dimensions, scenario);
-
-        console.log(`all elements: `, gameScene.children);
     }
 
     // 🧱 Ship creation
@@ -350,20 +347,6 @@ export default function GameTestPage() {
         if (scenario === "snr") applySNRDropEffect(ship, app, dim);
 
 
-
-        // alert("new ship is spawned with " + scenario + " effect!");
-
-
-        // if (!["blackout"].includes(scenario)) {
-        //     app.ticker.add(() => {
-        //         ship.x -= speed;
-        //         if (ship.x < -100) {
-        //             ship.x = dim.width + 100;
-        //             ship.alpha = 1;
-        //             // ship.rotation = Math.PI;
-        //         }
-        //     });
-        // }
         if (!["blackout"].includes(scenario)) {
             app.ticker.add(() => {
                 ship.x -= speed;
@@ -662,21 +645,6 @@ export default function GameTestPage() {
         });
     }
 
-    // ⏸️ Reset / Pause game
-    function resetGame() {
-        const app = appRef.current;
-        if (app) {
-            //if the game is paused continue if not then pause it
-            console.log('Resetting game...', app.ticker.started);
-            if (app.ticker.started) {
-                app.ticker.stop();
-            } else {
-                app.ticker.start();
-            }
-            // app.stage.removeChildren();
-            // appRef.current = null;
-        }
-    }
 
     // 🎮 Game Control Functions
     const handlePause = () => {
@@ -906,6 +874,7 @@ export default function GameTestPage() {
                 setTimeout(() => setScoreChange(null), 1500);
                 console.log('Ship respawned after port explosion');
             });
+
 
             ship.x = dim.width + 100; // reset position off-screen
 

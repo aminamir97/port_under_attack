@@ -266,11 +266,11 @@ export default function GameTestPage() {
             createBackground(gameScene, seaTexture, portTexture, dimensions);
 
             spawnShipWithScenario("fade");
-            // spawnShipWithScenario("jump");
-            // spawnShipWithScenario("slow");
-            // spawnShipWithScenario("ghost");
-            // spawnShipWithScenario("blackout");
-            // spawnShipWithScenario("snr");
+            spawnShipWithScenario("jump");
+            spawnShipWithScenario("slow");
+            spawnShipWithScenario("ghost");
+            spawnShipWithScenario("blackout");
+            spawnShipWithScenario("snr");
         };
 
         initGame();

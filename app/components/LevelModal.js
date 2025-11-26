@@ -18,20 +18,20 @@ export default function LevelModal({
         setIsCorrect(correct);
         setShowResult(true);
 
-        // Update score immediately
-        onSolve(correct);
+        // // Update score immediately
+        // onSolve(correct);
 
         // Wait 2 seconds to show result, then close
         setTimeout(() => {
-            handleClose();
+            handleClose(correct);
         }, 2000);
     };
 
-    const handleClose = () => {
+    const handleClose = (correct) => {
         setSelectedIssue("");
         setShowResult(false);
         setIsCorrect(false);
-        onClose(false);
+        onClose(correct);
     };
 
     return (
@@ -53,14 +53,7 @@ export default function LevelModal({
                                 ⚠️ THREAT DETECTED
                             </h2>
                         </div>
-                        <button
-                            onClick={handleClose}
-                            disabled={showResult}
-                            className="text-slate-400 hover:text-amber-500 text-xl sm:text-2xl font-bold 
-                                     disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                        >
-                            ✕
-                        </button>
+
                     </div>
 
                     {/* Content */}
@@ -123,17 +116,7 @@ export default function LevelModal({
 
                         {/* Action Buttons */}
                         <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-amber-600/30">
-                            <button
-                                onClick={handleClose}
-                                disabled={showResult}
-                                className="flex-1 px-3 py-2 sm:px-6 sm:py-3 bg-slate-700/50 hover:bg-slate-600/50
-                                         border border-slate-500/50 sm:border-2 hover:border-slate-400
-                                         text-slate-300 text-xs sm:text-base font-bold uppercase tracking-wider rounded-lg
-                                         transition-all duration-200 transform hover:scale-105
-                                         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                            >
-                                Cancel
-                            </button>
+
                             <button
                                 onClick={handleSubmit}
                                 disabled={!selectedIssue || showResult}

@@ -1,62 +1,52 @@
-"use client";
-
-export default function GameToolbar({ score = 0, time = "00:00", onMenuToggle, scoreChange = null }) {
+export default function GameToolbar({ score, time, scoreChange, unreadEventLogs, onMenuToggle }) {
     return (
-        <div className="h-14 md:h-16 bg-slate-900 border-b border-amber-600/50 flex items-center justify-between px-3 md:px-6 shadow-lg">
-            {/* Left: Logo + Game Name (name hidden on small screens) */}
-            <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                <img
-                    src="/images/logo.png"
-                    alt="Game Logo"
-                    className="w-8 h-8 md:w-10 md:h-10 drop-shadow-[0_0_8px_rgba(217,119,6,0.8)]"
-                />
-                {/* Game name only shows on medium+ screens */}
-                <h1 className="text-amber-500 font-bold text-xl tracking-wider uppercase hidden md:block">
-                    City Under Attack
-                </h1>
-            </div>
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b-2 border-cyan-500/50 shadow-lg shadow-cyan-500/20">
+            <div className="flex justify-between items-center h-16 px-6">
+                {/* Left: Score Display */}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-lg border border-cyan-500/30">
+                        <span className="text-cyan-400 font-bold text-sm">SCORE</span>
+                        <span className="text-white font-mono text-xl relative">
+                            {score}
+                            {/* Score change animation */}
+                            {scoreChange && (
+                                <span
+                                    className={`absolute left-full ml-2 text-lg font-bold animate-floatUp ${scoreChange > 0 ? 'text-green-400' : 'text-red-400'
+                                        }`}
+                                    style={{
+                                        textShadow: scoreChange > 0
+                                            ? '0 0 10px rgba(34, 197, 94, 0.8)'
+                                            : '0 0 10px rgba(239, 68, 68, 0.8)'
+                                    }}
+                                >
+                                    {scoreChange > 0 ? '+' : ''}{scoreChange}
+                                </span>
+                            )}
+                        </span>
+                    </div>
 
-            {/* Center: Score & Time - ALWAYS VISIBLE, clear and prominent */}
-            <div className="flex items-center gap-4 md:gap-8 shrink-0">
-                <div className="flex items-center gap-2 relative">
-                    <span className="text-slate-400 text-xs md:text-sm font-semibold uppercase tracking-wide">
-                        Score:
-                    </span>
-                    <span className="text-amber-400 text-base md:text-lg font-bold">{score}</span>
+                    <div className="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-lg border border-amber-500/30">
+                        <span className="text-amber-400 font-bold text-sm">TIME</span>
+                        <span className="text-white font-mono text-xl">{time}</span>
+                    </div>
+                </div>
 
-                    {/* Floating Score Change Animation */}
-                    {scoreChange !== null && (
-                        <span
-                            className={`absolute left-full ml-2 text-lg md:text-xl font-bold animate-float-up ${scoreChange > 0 ? 'text-green-400' : 'text-red-400'
-                                }`}
-                            style={{
-                                animation: 'floatUp 1.5s ease-out forwards',
-                                textShadow: scoreChange > 0
-                                    ? '0 0 10px rgba(74, 222, 128, 0.8)'
-                                    : '0 0 10px rgba(248, 113, 113, 0.8)'
-                            }}
-                        >
-                            {scoreChange > 0 ? '+' : ''}{scoreChange}
+                {/* Right: Menu Button with notification badge */}
+                <button
+                    onClick={onMenuToggle}
+                    className="relative flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-400/60 border border-cyan-400/30"
+                >
+                    <span className="text-lg">☰</span>
+                    <span className="hidden md:inline">MENU</span>
+
+                    {/* 👇 ADD NOTIFICATION BADGE */}
+                    {unreadEventLogs > 0 && (
+                        <span className="absolute -top-2 -right-2 flex items-center justify-center w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full border-2 border-slate-900 animate-pulse">
+                            {unreadEventLogs}
                         </span>
                     )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-xs md:text-sm font-semibold uppercase tracking-wide">
-                        Time:
-                    </span>
-                    <span className="text-amber-400 text-base md:text-lg font-bold">{time}</span>
-                </div>
+                </button>
             </div>
-
-            {/* Right: Menu Button */}
-            <button
-                onClick={onMenuToggle}
-                className="px-3 py-1.5 md:px-6 md:py-2 bg-amber-700 hover:bg-amber-600 border-2 border-amber-500 
-                           text-slate-100 text-xs md:text-base font-bold uppercase tracking-wider rounded 
-                           transition-all duration-200 shadow-md hover:shadow-amber-500/50 shrink-0"
-            >
-                Menu
-            </button>
         </div>
     );
 }

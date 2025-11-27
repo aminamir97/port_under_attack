@@ -24,7 +24,7 @@ export default function LevelModal({
         // Wait 2 seconds to show result, then close
         setTimeout(() => {
             handleClose(correct);
-        }, 2000);
+        }, 1000);
     };
 
     const handleClose = (correct) => {

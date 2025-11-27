@@ -278,7 +278,7 @@ export default function GameTestPage() {
 
             createBackground(gameScene, seaTexture, portTexture, dimensions);
 
-            // spawnShipWithScenario("fade");
+            spawnShipWithScenario("fade");
             // spawnShipWithScenario("jump");
             // spawnShipWithScenario("slow");
             // spawnShipWithScenario("ghost");
@@ -333,9 +333,6 @@ export default function GameTestPage() {
             console.log('Sprite clicked!');
             shipIsClicked(ev, ship, scenario);
         });
-        // 👇 ADD THIS - Initialize explosion flag
-        ship.isExploding = false;
-
         gameScene.addChild(ship);
         animateShip(ship, app, dimensions, scenario);
     }
@@ -361,17 +358,7 @@ export default function GameTestPage() {
         const speed = BASE_SPEED;
 
         // Trigger different spoofing behaviors
-        // Check if serious mode (learned = true)
-        const level = gameLevels.find(l => l.scenario === scenario);
-        const isSeriousMode = level?.learned;
-
-        if (scenario === "fade") {
-            if (isSeriousMode) {
-                applyFadeEffectSerious(ship, app, dim, scenario);
-            } else {
-                applyFadeEffect(ship, app, dim, scenario);
-            }
-        }
+        if (scenario === "fade") applyFadeEffect(ship, app, dim, scenario);
         if (scenario === "jump") applyPositionJumpEffect(ship, app, dim);
         if (scenario === "slow") applySlowDriftEffect(ship, app, dim);
         if (scenario === "ghost") applyDuplicateGhostEffect(ship, app, dim);
@@ -387,10 +374,8 @@ export default function GameTestPage() {
                     return;
                 }
 
-                if (!ship.isExploding) {
-                    ship.x -= speed;
+                ship.x -= speed;
 
-                }
                 // 🎯 Use centralized collision handler
                 // handlePortCollision(ship, app, dim, scenario);
             };
@@ -496,65 +481,6 @@ export default function GameTestPage() {
         app.ticker.add(fadeTicker);
 
 
-    }
-
-    // 🎯 SERIOUS MODE - Fade Effect (Respawns by repositioning, not recreating)
-    function applyFadeEffectSerious(ship, app, dim, scenario) {
-        let fadeDirection = -1;
-        let fadeSpeed = 0.01;
-        let fadeActive = false;
-        let eventLogged = false;
-
-        const fadeTicker = () => {
-            if (!ship || ship.destroyed) {
-                app.ticker.remove(fadeTicker);
-                return;
-            }
-
-            // Activate fade at 90%
-            if (ship.x <= dim.width * 0.9 && !fadeActive) {
-                fadeActive = true;
-
-                if (!eventLogged) {
-                    addEventLog("Vessel detected with intermittent GNSS signal fade pattern", "⚠️");
-                    eventLogged = true;
-                    // NO TOAST in serious mode
-                }
-            }
-
-            // Port collision - RESPAWN by repositioning
-            if (ship.x < PORT_WIDTH + ship.width) {
-                fadeActive = false;
-                ship.alpha = 1;
-
-
-
-                // Explode the ship
-                explodeShip(ship, app, dim, () => {
-                    setScore(prevScore => Math.max(0, prevScore - 20));
-                    setScoreChange(-20);
-                    setTimeout(() => setScoreChange(null), 1500);
-
-
-
-                    ship.destroy();
-                    spawnShipWithScenario(scenario);
-                }, true);
-
-
-
-                // Remove this ticker since ship is destroyed
-                app.ticker.remove(fadeTicker);
-            }
-
-            // Fade animation
-            if (fadeActive) {
-                ship.alpha += fadeDirection * fadeSpeed;
-                if (ship.alpha <= 0.01 || ship.alpha >= 1) fadeDirection *= -1;
-            }
-        };
-
-        app.ticker.add(fadeTicker);
     }
 
 
@@ -672,14 +598,13 @@ export default function GameTestPage() {
                 console.log('✅ Ship destroyed after correct answer.', gameLevels);
                 console.log('✅ level currecnt learning situation ', isLearningMode, currentLevel);
 
-                if (!isLearningMode) {
-                    console.log('✅ Serious mode - respawning ship...',);
-                    setTimeout(() => {
-                        spawnShipWithScenario(scenario);
-                    }, 1000);
-                }
-                //}
+                // if (!isLearningMode) {
+                //     setTimeout(() => {
+                //         spawnShipWithScenario(scenario);
+                //     }, 1000);
 
+                //}
+                spawnShipWithScenario(scenario);
                 handleResume();
             }, false);
         } else {
@@ -734,11 +659,6 @@ export default function GameTestPage() {
         const gameScene = gameSceneRef.current;
         if (!gameScene) return;
 
-        // 👇 FREEZE SHIP MOVEMENT IMMEDIATELY
-        ship.isExploding = true;  // Flag to stop movement ticker
-
-
-
         handleResume()
 
         // 🔴 Create explosion graphics
@@ -766,7 +686,6 @@ export default function GameTestPage() {
             particles.push(particle);
         }
 
-
         // 💨 Create smoke effect
         const smoke = new Graphics();
         smoke.circle(0, 0, 50);
@@ -779,7 +698,7 @@ export default function GameTestPage() {
 
         // 🎬 Animation
         let explosionFrame = 0;
-        const explosionDuration = 30; // frames (~1 second)
+        const explosionDuration = 25; // frames (~1 second)
 
         const explosionTicker = () => {
             explosionFrame++;
@@ -844,31 +763,6 @@ export default function GameTestPage() {
         return false; // no collision
     }
 
-    // Add these helper functions near your other handlers
-    function runLearningFadeTest() {
-        // Set fade to learning mode (learned: false)
-        setGameLevels(prev =>
-            prev.map(l => (l.scenario === "fade" ? { ...l, learned: false } : l))
-        );
-        // Spawn a fade ship (learning mode uses applyFadeEffect)
-        setTimeout(() => {
-            spawnShipWithScenario("fade");
-            console.log("▶️ Learning mode: fade ship spawned");
-        }, 200);
-    }
-
-    function runSeriousFadeTest() {
-        // Set fade to serious mode (learned: true)
-        setGameLevels(prev =>
-            prev.map(l => (l.scenario === "fade" ? { ...l, learned: true } : l))
-        );
-        // Spawn a fade ship (serious mode uses applyFadeEffectSerious)
-        setTimeout(() => {
-            spawnShipWithScenario("fade");
-            console.log("▶️ Serious mode: fade ship spawned");
-        }, 200);
-    }
-
     // 🧱 Layout UI
     return (
         <div className="flex flex-col h-screen bg-slate-900">
@@ -931,23 +825,6 @@ export default function GameTestPage() {
                 onResume={handleResume}
                 onExit={handleExit}
             />
-            <div className="fixed top-20 right-4 z-50 flex flex-col gap-2">
-                <button
-                    onClick={runLearningFadeTest}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg font-semibold shadow"
-                    title="Set learned=false and spawn fade"
-                >
-                    🎓 Test Learning Fade
-                </button>
-
-                <button
-                    onClick={runSeriousFadeTest}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow"
-                    title="Set learned=true and spawn fade (serious)"
-                >
-                    🎯 Test Serious Fade
-                </button>
-            </div>
         </div>
     );
 }

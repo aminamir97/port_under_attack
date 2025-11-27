@@ -6,7 +6,6 @@ import SideMenu from "../components/SideMenu";
 import BottomToolbar from "../components/BottomToolbar";
 import LevelModal from "../components/LevelModal";
 import toast from 'react-hot-toast';
-import QuickDropdown from "../components/QuickDropdown";
 const modalsDefault = {
     fade: {
         title: "Signal Fade",
@@ -204,8 +203,7 @@ export default function GameTestPage() {
     const [learningCards, setLearningCards] = useState([]); // Dynamic list of unlocked cards
     const [gameTime, setGameTime] = useState(0); // Time in seconds
     const [unreadEventLogs, setUnreadEventLogs] = useState(0);
-    const [showQuickDropdown, setShowQuickDropdown] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
+
 
 
 
@@ -278,7 +276,7 @@ export default function GameTestPage() {
 
             createBackground(gameScene, seaTexture, portTexture, dimensions);
 
-            // spawnShipWithScenario("fade");
+            spawnShipWithScenario("fade");
             // spawnShipWithScenario("jump");
             // spawnShipWithScenario("slow");
             // spawnShipWithScenario("ghost");
@@ -333,9 +331,6 @@ export default function GameTestPage() {
             console.log('Sprite clicked!');
             shipIsClicked(ev, ship, scenario);
         });
-        // 👇 ADD THIS - Initialize explosion flag
-        ship.isExploding = false;
-
         gameScene.addChild(ship);
         animateShip(ship, app, dimensions, scenario);
     }
@@ -361,17 +356,7 @@ export default function GameTestPage() {
         const speed = BASE_SPEED;
 
         // Trigger different spoofing behaviors
-        // Check if serious mode (learned = true)
-        const level = gameLevels.find(l => l.scenario === scenario);
-        const isSeriousMode = level?.learned;
-
-        if (scenario === "fade") {
-            if (isSeriousMode) {
-                applyFadeEffectSerious(ship, app, dim, scenario);
-            } else {
-                applyFadeEffect(ship, app, dim, scenario);
-            }
-        }
+        if (scenario === "fade") applyFadeEffect(ship, app, dim, scenario);
         if (scenario === "jump") applyPositionJumpEffect(ship, app, dim);
         if (scenario === "slow") applySlowDriftEffect(ship, app, dim);
         if (scenario === "ghost") applyDuplicateGhostEffect(ship, app, dim);
@@ -387,10 +372,8 @@ export default function GameTestPage() {
                     return;
                 }
 
-                if (!ship.isExploding) {
-                    ship.x -= speed;
+                ship.x -= speed;
 
-                }
                 // 🎯 Use centralized collision handler
                 // handlePortCollision(ship, app, dim, scenario);
             };
@@ -448,13 +431,13 @@ export default function GameTestPage() {
                 fadeActive = true;
 
                 // Show toast only once when issue starts
-                if (!toastShown) {
+                if (!toastShown && !levelLearned) {
                     addEventLog("Vessel detected with intermittent GNSS signal fade pattern", "⚠️");
 
-                    // Only show toast if NOT learned (learning mode)
-                    if (!levelLearned) {
-                        showToast("Suspicious ship detected with signal anomalies! Click to investigate.", "warning");
-                    }
+                    showToast(
+                        "Suspicious ship detected with signal anomalies! Click on it to investigate.",
+                        "warning"
+                    );
                     toastShown = true;
                 }
             }
@@ -466,8 +449,6 @@ export default function GameTestPage() {
                 fadeActive = false;
                 ship.alpha = 1;
 
-
-
                 // Explode the ship
                 explodeShip(ship, app, dim, () => {
                     setScore(prevScore => Math.max(0, prevScore - 20));
@@ -476,12 +457,14 @@ export default function GameTestPage() {
 
                     console.log("Ship exploded due to unhandled fade issue.", gameLevels);
 
-
-                    ship.destroy();
-                    spawnShipWithScenario(scenario);
+                    // 👇 ADD THIS: Spawn new ship after explosion if not learned
+                    if (!levelLearned) {
+                        spawnShipWithScenario(scenario);
+                    }
                 }, true);
 
-
+                // Destroy current ship immediately (removes it from scene)
+                ship.destroy();
 
                 // Remove this ticker since ship is destroyed
                 app.ticker.remove(fadeTicker);
@@ -498,65 +481,267 @@ export default function GameTestPage() {
 
     }
 
-    // 🎯 SERIOUS MODE - Fade Effect (Respawns by repositioning, not recreating)
-    function applyFadeEffectSerious(ship, app, dim, scenario) {
-        let fadeDirection = -1;
-        let fadeSpeed = 0.01;
-        let fadeActive = false;
-        let eventLogged = false;
+    // ⚠️ Spoofing: Position Jump effect
+    function applyPositionJumpEffect(ship, app, dim) {
+        const baseSpeed = 1;
+        let jumpTimer = 0;
+        const jumpInterval = 120; // frames (~2 seconds at 60fps)
+        const jumpDistance = 100; // pixels for jump (adjust as you like)
 
-        const fadeTicker = () => {
-            if (!ship || ship.destroyed) {
-                app.ticker.remove(fadeTicker);
-                return;
+        app.ticker.add(() => {
+            // Normal left movement
+            ship.x -= baseSpeed;
+
+            // Count frames
+            jumpTimer++;
+
+            // Every few seconds, perform a "jump"
+            if (jumpTimer >= jumpInterval) {
+                jumpTimer = 0;
+
+                // Random small teleport (± range)
+                const randomX = (Math.random() - 0.5) * jumpDistance;
+                const randomY = (Math.random() - 0.5) * jumpDistance;
+
+                ship.x += randomX;
+                ship.y += randomY;
+
+                // Flash red for a moment to show the anomaly
+                ship.tint = 0xff3333;
+                setTimeout(() => {
+                    ship.tint = 0xffffff;
+                }, 200);
             }
 
-            // Activate fade at 90%
-            if (ship.x <= dim.width * 0.9 && !fadeActive) {
-                fadeActive = true;
+            // 🎯 Use centralized collision handler
+            handlePortCollision(ship, app, dim, "jump");
+        });
+    }
 
-                if (!eventLogged) {
-                    addEventLog("Vessel detected with intermittent GNSS signal fade pattern", "⚠️");
-                    eventLogged = true;
-                    // NO TOAST in serious mode
+    // 🐢 Spoofing: Slow / Delayed Movement (Meaconing / Replay Attack)
+    function applySlowDriftEffect(ship, app, dim) {
+        let currentSpeed = BASE_SPEED;
+        let frameCount = 0;
+        const delayCycle = 30; // every ~1s at 60fps
+        const slowFactor = 0.3; // how much slower the delay is
+
+        app.ticker.add(() => {
+            frameCount++;
+
+            // every few seconds randomly slow down or dash
+            if (frameCount % delayCycle === 0) {
+                const random = Math.random();
+
+                if (random < 0.4) {
+                    // enter "delay" phase — move very slow
+                    currentSpeed = BASE_SPEED * slowFactor;
+                    ship.tint = 0xffcc00; // yellow tint for signal delay
+                } else if (random < 0.7) {
+                    // small "dash" skip forward — lag catch-up
+                    currentSpeed = BASE_SPEED * 3;
+                    ship.tint = 0xff8800;
+                } else {
+                    // normal state
+                    currentSpeed = BASE_SPEED;
+                    ship.tint = 0xffffff;
                 }
             }
 
-            // Port collision - RESPAWN by repositioning
-            if (ship.x < PORT_WIDTH + ship.width) {
-                fadeActive = false;
-                ship.alpha = 1;
+            // move ship
+            ship.x -= currentSpeed;
 
-
-
-                // Explode the ship
-                explodeShip(ship, app, dim, () => {
-                    setScore(prevScore => Math.max(0, prevScore - 20));
-                    setScoreChange(-20);
-                    setTimeout(() => setScoreChange(null), 1500);
-
-
-
-                    ship.destroy();
-                    spawnShipWithScenario(scenario);
-                }, true);
-
-
-
-                // Remove this ticker since ship is destroyed
-                app.ticker.remove(fadeTicker);
-            }
-
-            // Fade animation
-            if (fadeActive) {
-                ship.alpha += fadeDirection * fadeSpeed;
-                if (ship.alpha <= 0.01 || ship.alpha >= 1) fadeDirection *= -1;
-            }
-        };
-
-        app.ticker.add(fadeTicker);
+            // 🎯 Use centralized collision handler
+            handlePortCollision(ship, app, dim, "slow");
+        });
     }
 
+    // 👻 Spoofing: Duplicate Positions (Ghost Ships - recreated each spawn)
+    function applyDuplicateGhostEffect(ship, app, dim) {
+        const horizontalOffset = 10; // slight horizontal difference
+        const verticalOffset = 70;   // above/below distance
+        let ghosts = [];
+
+        // helper: create ghost ships
+        function createGhosts() {
+            // remove existing ghosts if any
+            ghosts.forEach(g => g.destroy());
+            ghosts = [];
+
+            // 🎲 Random number of ghosts (1 to 3)
+            const ghostCount = Math.floor(Math.random() * 3) + 1;
+
+            for (let i = 0; i < ghostCount; i++) {
+                const ghost = new Sprite(ship.texture);
+                ghost.anchor.set(0.5);
+                ghost.scale.set(ship.scale.x);
+                ghost.alpha = 0.8; // start slightly faded
+                ghost.tint = 0xaa66ff; // purple tint
+                ghost.x = ship.x + (Math.random() - 0.5) * horizontalOffset;
+                ghost.y = ship.y + (i === 0 ? -verticalOffset : verticalOffset * (i + 0.5 * Math.random()));
+
+                ship.parent.addChild(ghost);
+                ghosts.push(ghost);
+            }
+        }
+
+        // create ghosts initially
+        createGhosts();
+
+        // movement animation
+        app.ticker.add(() => {
+            // move main ship
+            ship.x -= BASE_SPEED;
+
+            // move ghost ships with smooth subtle wave
+            ghosts.forEach((ghost, i) => {
+                ghost.x -= BASE_SPEED * 2;
+                ghost.y += Math.sin(app.ticker.lastTime / 1200 + i) * 0.2;
+                // 💡 ghost flicker glow effect
+                ghost.alpha = 0.6 + Math.sin(app.ticker.lastTime / 400 + i) * 0.1;
+            });
+
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "ghost")) {
+                // When ship respawns, recreate ghosts
+                createGhosts();
+            }
+        });
+    }
+
+    // 📡 Jamming / Blackout: Freeze + Countdown + Respawn
+    function applyCompleteBlackoutEffect(ship, app, dim) {
+        let isFrozen = false;
+        let freezeDuration = 5; // seconds
+        let freezeStartTime = 0;
+        const baseSpeed = BASE_SPEED;
+
+        // Create a visible countdown text near the ship
+        const timerText = new Text("", {
+            fill: "#ff4444",
+            fontSize: 20,
+            fontWeight: "bold",
+            stroke: "#000000",
+            strokeThickness: 4,
+        });
+        timerText.anchor.set(0.5);
+        ship.parent.addChild(timerText);
+
+        app.ticker.add((delta) => {
+            if (!isFrozen) {
+                console.log("Ship moving normally.", isFrozen);
+                // Move ship normally
+                ship.x -= baseSpeed * 1;
+
+                // Trigger blackout when ship reaches middle of screen
+                if (ship.x < dim.width * 0.6 && ship.x > dim.width * 0.4) {
+                    isFrozen = true;
+                    freezeStartTime = app.ticker.lastTime;
+                    ship.tint = 0x555555;
+                    console.log("🚨 Blackout triggered! Ship frozen.");
+                }
+            } else {
+                // Calculate remaining time
+                const elapsed = (app.ticker.lastTime - freezeStartTime) / 1000;
+                const remaining = Math.max(0, freezeDuration - elapsed);
+
+                // Update countdown text
+                timerText.text = `${remaining.toFixed(1)}s`;
+                timerText.x = ship.x;
+                timerText.y = ship.y - 50;
+
+                // End of freeze → fade out then respawn
+                if (remaining <= 0) {
+                    ship.alpha -= 0.05;
+                    if (ship.alpha <= 0) {
+                        ship.alpha = 1;
+                        ship.tint = 0xffffff;
+                        ship.x = dim.width + 100;
+                        // Spawn ship at random Y position across full height with margin
+                        const shipHeight = ship.height;
+                        const margin = shipHeight / 2 + 20;
+                        ship.y = margin + Math.random() * (dim.height - 2 * margin);
+                        isFrozen = false;
+                        timerText.text = "";
+                    }
+                }
+            }
+
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "blackout")) {
+                timerText.text = "";
+                isFrozen = false;
+            }
+        });
+    }
+
+    // 📡 Spoofing/Jamming: SNR Drop Effect (red aura + signal bar)
+    function applySNRDropEffect(ship, app, dim) {
+        const baseSpeed = BASE_SPEED;
+
+        // 🔴 Create red circular glow around ship
+        const glow = new Graphics();
+        glow.circle(0, 0, 60);
+        glow.fill({ color: 0xff0000, alpha: 0.2 }); // starts soft
+        ship.parent.addChild(glow);
+
+        // 📶 Create signal strength bar (above ship)
+        const snrBarContainer = new Container();
+        const snrBarBg = new Graphics();
+        snrBarBg.rect(-25, -8, 50, 6).fill({ color: 0x222222 }); // background (dark gray)
+        const snrBar = new Graphics();
+        snrBar.rect(-25, -8, 50, 6).fill({ color: 0x00ff00 }); // start green
+        snrBarContainer.addChild(snrBarBg);
+        snrBarContainer.addChild(snrBar);
+        ship.parent.addChild(snrBarContainer);
+
+        // 🎚️ Variables for animation
+        let targetSignal = 1; // 1 = full
+        let currentSignal = 1;
+        let frameCount = 0;
+
+        app.ticker.add(() => {
+            // 🚢 move ship
+            ship.x -= baseSpeed;
+
+            // sync visuals with ship position
+            glow.x = ship.x;
+            glow.y = ship.y;
+            snrBarContainer.x = ship.x;
+            snrBarContainer.y = ship.y - 60;
+
+            // every second → change signal
+            frameCount++;
+            if (frameCount % 60 === 0) {
+                targetSignal = 0.2 + Math.random() * 0.8;
+            }
+
+            // smooth interpolation
+            currentSignal += (targetSignal - currentSignal) * 0.1;
+
+            // 🔥 red glow stronger when signal is weak
+            const glowAlpha = 0.5 + (1 - currentSignal) * 0.8;
+            glow.alpha = glowAlpha;
+
+            // 🟩 update bar
+            const barWidth = 50 * currentSignal;
+            snrBar.clear();
+
+            let color = 0x00ff00; // green
+            if (currentSignal < 0.6) color = 0xffff00; // yellow
+            if (currentSignal < 0.3) color = 0xff0000; // red
+
+            snrBar.rect(-25, -8, barWidth, 6).fill({ color });
+
+            // 🎯 Use centralized collision handler
+            if (handlePortCollision(ship, app, dim, "snr")) {
+                // Reset SNR visuals on respawn
+                currentSignal = 1;
+                targetSignal = 1;
+                glow.alpha = 0.2;
+                snrBar.clear().rect(-25, -8, 50, 6).fill({ color: 0x00ff00 });
+            }
+        });
+    }
 
 
     // 🎮 Game Control Functions
@@ -589,74 +774,49 @@ export default function GameTestPage() {
     async function shipIsClicked(ev, ship, scenario) {
         console.log("Ship clicked event:", ship);
 
-        const level = gameLevels.find(l => l.scenario === scenario);
-        if (!level) return;
+        // Check if learning mode is active
+        const level = gameLevels.find(l => l.scenario === scenario && !l.learned);
 
-        handlePause();
-        setCurrentLevel(level);
-
-        // Check if serious mode (learned = true) or learning mode (learned = false)
-        if (level.learned) {
-            // Serious mode: Show quick dropdown
-            setDropdownPosition({ x: ev.global.x, y: ev.global.y });
-            setShowQuickDropdown(true);
-        } else {
-            // Learning mode: Show full modal
+        if (level) {
+            // Pause the game
+            handlePause();
+            // Show the modal
+            setCurrentLevel(level);
             setShowLevelModal(true);
         }
     }
 
-    function handleDropdownSubmit(isCorrect) {
-        setShowQuickDropdown(false);
-
-        if (isCorrect) {
-            // Requirement #6: Correct answer → +50 score, ship destroyed, respawns
-            handleCorrectAnswer(currentLevel.scenario);
-        } else {
-            // Requirement #6: Wrong answer → -20 score, ship continues
-            handleWrongAnswer();
-        }
-
-        setCurrentLevel(null);
-    }
-
     // ✅ Handle correct answer
     function handleCorrectAnswer(scenario) {
-        // 👇 CHECK LEARNING MODE **BEFORE** UPDATING STATE
-        const currentLevel = gameLevels.find(l => l.scenario === scenario);
-        const isLearningMode = !currentLevel?.learned;
 
-        // Only mark as learned and unlock cards in LEARNING MODE
-        if (isLearningMode) {
-            // Mark level as learned
-            setGameLevels(prevLevels =>
-                prevLevels.map(level =>
-                    level.scenario === scenario
-                        ? { ...level, learned: true }
-                        : level
-                )
-            );
+        // Mark level as learned
+        setGameLevels(prevLevels =>
+            prevLevels.map(level =>
+                level.scenario === scenario
+                    ? { ...level, learned: true }
+                    : level
+            )
+        );
 
-            // Add learning card if not already unlocked
-            const cardAlreadyUnlocked = learningCards.some(card => card.id === scenario);
-            if (!cardAlreadyUnlocked) {
-                const cardToUnlock = allLearningCardsLibrary.find(card => card.id === scenario);
-                if (cardToUnlock) {
-                    setLearningCards(prev => [...prev, cardToUnlock]);
-                    addEventLog(`Threat neutralized: ${cardToUnlock.title} attack successfully identified`, "✅");
-                    toast.success(`🎓 New learning card unlocked: "${cardToUnlock.title}"! Check the menu.`);
-                    console.log(`🎓 Learning card "${cardToUnlock.title}" unlocked!`);
-                }
-            }
-        } else {
-            // Serious mode - just log the success (no card unlock)
-            addEventLog(`Threat neutralized: ${scenario} attack correctly identified`, "✅");
-        }
-
-        // Add 50 points (both modes)
+        // Add 50 points
         setScore(prevScore => prevScore + 50);
         setScoreChange(+50);
         setTimeout(() => setScoreChange(null), 1500);
+        // 👇 DELETE THESE TWO DUPLICATE LINES (lines 749-750)
+        // setScoreChange(+50);
+        // setTimeout(() => setScoreChange(null), 1500);
+
+        // Add learning card if not already unlocked
+        const cardAlreadyUnlocked = learningCards.some(card => card.id === scenario);
+        if (!cardAlreadyUnlocked) {
+            const cardToUnlock = allLearningCardsLibrary.find(card => card.id === scenario);
+            if (cardToUnlock) {
+                setLearningCards(prev => [...prev, cardToUnlock]);
+                toast.success(`🎓 New learning card unlocked: "${cardToUnlock.title}"! Check the menu.`);
+
+                console.log(`🎓 Learning card "${cardToUnlock.title}" unlocked!`);
+            }
+        }
 
         // Find and explode the ship
         const gameScene = gameSceneRef.current;
@@ -667,26 +827,12 @@ export default function GameTestPage() {
         if (ship) {
             explodeShip(ship, appRef.current, dimensions, () => {
                 ship.destroy();
-
-                // In serious mode, respawn after 1 second
-                console.log('✅ Ship destroyed after correct answer.', gameLevels);
-                console.log('✅ level currecnt learning situation ', isLearningMode, currentLevel);
-
-                if (!isLearningMode) {
-                    console.log('✅ Serious mode - respawning ship...',);
-                    setTimeout(() => {
-                        spawnShipWithScenario(scenario);
-                    }, 1000);
-                }
-                //}
-
-                handleResume();
-            }, false);
+            }, false); // 👈 Make sure this is false (shouldRespawn)
         } else {
             handleResume();
         }
 
-        console.log(isLearningMode ? '✅ Learning mode - ship neutralized!' : '✅ Serious mode - ship respawning!', gameLevels);
+        console.log('✅ Correct answer - ship neutralized!', gameLevels);
     }
 
     // ❌ Handle wrong answer
@@ -734,11 +880,6 @@ export default function GameTestPage() {
         const gameScene = gameSceneRef.current;
         if (!gameScene) return;
 
-        // 👇 FREEZE SHIP MOVEMENT IMMEDIATELY
-        ship.isExploding = true;  // Flag to stop movement ticker
-
-
-
         handleResume()
 
         // 🔴 Create explosion graphics
@@ -766,7 +907,6 @@ export default function GameTestPage() {
             particles.push(particle);
         }
 
-
         // 💨 Create smoke effect
         const smoke = new Graphics();
         smoke.circle(0, 0, 50);
@@ -779,7 +919,7 @@ export default function GameTestPage() {
 
         // 🎬 Animation
         let explosionFrame = 0;
-        const explosionDuration = 30; // frames (~1 second)
+        const explosionDuration = 25; // frames (~1 second)
 
         const explosionTicker = () => {
             explosionFrame++;
@@ -844,31 +984,6 @@ export default function GameTestPage() {
         return false; // no collision
     }
 
-    // Add these helper functions near your other handlers
-    function runLearningFadeTest() {
-        // Set fade to learning mode (learned: false)
-        setGameLevels(prev =>
-            prev.map(l => (l.scenario === "fade" ? { ...l, learned: false } : l))
-        );
-        // Spawn a fade ship (learning mode uses applyFadeEffect)
-        setTimeout(() => {
-            spawnShipWithScenario("fade");
-            console.log("▶️ Learning mode: fade ship spawned");
-        }, 200);
-    }
-
-    function runSeriousFadeTest() {
-        // Set fade to serious mode (learned: true)
-        setGameLevels(prev =>
-            prev.map(l => (l.scenario === "fade" ? { ...l, learned: true } : l))
-        );
-        // Spawn a fade ship (serious mode uses applyFadeEffectSerious)
-        setTimeout(() => {
-            spawnShipWithScenario("fade");
-            console.log("▶️ Serious mode: fade ship spawned");
-        }, 200);
-    }
-
     // 🧱 Layout UI
     return (
         <div className="flex flex-col h-screen bg-slate-900">
@@ -911,19 +1026,6 @@ export default function GameTestPage() {
                 onSolve={handleModalSolve}
             />
 
-            {/* Quick Dropdown (Serious Mode) */}
-            <QuickDropdown
-                isOpen={showQuickDropdown}
-                position={dropdownPosition}
-                levelInfo={currentLevel}
-                onSubmit={handleDropdownSubmit}
-                onClose={() => {
-                    setShowQuickDropdown(false);
-                    setCurrentLevel(null);
-                    handleResume();
-                }}
-            />
-
             {/* Bottom Toolbar with Game Controls */}
             <BottomToolbar
                 isPaused={isPaused}
@@ -931,23 +1033,6 @@ export default function GameTestPage() {
                 onResume={handleResume}
                 onExit={handleExit}
             />
-            <div className="fixed top-20 right-4 z-50 flex flex-col gap-2">
-                <button
-                    onClick={runLearningFadeTest}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg font-semibold shadow"
-                    title="Set learned=false and spawn fade"
-                >
-                    🎓 Test Learning Fade
-                </button>
-
-                <button
-                    onClick={runSeriousFadeTest}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow"
-                    title="Set learned=true and spawn fade (serious)"
-                >
-                    🎯 Test Serious Fade
-                </button>
-            </div>
         </div>
     );
 }
@@ -966,17 +1051,8 @@ export default function GameTestPage() {
 9. toast message will say wow u win new learning card unlocked: "title of the card" check it out,
 10. notification about learning card will be shown next to the new so user will open it,
 11. ship with the same issue will not spawn again.
+
+
+
+
 */
-
-
-/* serious scenario one problem:
-
-1. ship comes with a issue, 
-2. no toast message as we are in serious playing mode and issue already learned,
-3. event log will have new entry and notification will be shown in the menu icon,
-4. user does not click on the ship and ship reaches port and ship destroyed and -20 score and ship respawned,
-5. when user clicks on ship, small drop down single select menu will be shown with question about the issue,
-6. user answers question, if correct +50 score and ship is destroyed, if wrong -20 score and ship continues to port until user solve it,
-7. ship with the same issue will be spawn again.
-*/
-

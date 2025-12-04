@@ -218,80 +218,67 @@ const GAME_PHASES = {
     1: {
         name: "Basic Training",
         scenarios: ["basic"],
-        waveSize: 5,           // ← NEW: Total ships in this wave
-        target: { basic: 5 }
+        target: { basic: 2 }  // Learn basics: 2 ships
     },
     2: {
         name: "Fade Introduction",
         scenarios: ["fade"],
-        waveSize: 3,
-        target: { fade: 3 }
+        target: { fade: 3 }  // ✅ Solve fade 3 times
     },
     3: {
         name: "Mixed Ops I",
         scenarios: ["basic", "fade"],
-        waveSize: 3,
-        target: { total: 3 }
+        target: { total: 10 }  // ✅ Any 10 ships total
     },
     4: {
         name: "Jump Introduction",
         scenarios: ["jump"],
-        waveSize: 3,
-        target: { jump: 3 }
+        target: { jump: 3 }  // ✅ Solve jump 3 times
     },
     5: {
         name: "Mixed Ops II",
         scenarios: ["basic", "fade", "jump"],
-        waveSize: 3,
-        target: { total: 3 }
+        target: { total: 10 }  // ✅ Any 10 ships total
     },
     6: {
         name: "Ghost Introduction",
         scenarios: ["ghost"],
-        waveSize: 3,
-        target: { ghost: 3 }
+        target: { ghost: 3 }  // ✅ Solve ghost 3 times
     },
     7: {
         name: "Mixed Ops III",
         scenarios: ["basic", "fade", "jump", "ghost"],
-        waveSize: 3,
-        target: { total: 3 }
+        target: { total: 10 }  // ✅ Any 10 ships total
     },
     8: {
         name: "Slow Introduction",
         scenarios: ["slow"],
-        waveSize: 3,
-        target: { slow: 3 }
+        target: { slow: 3 }  // ✅ Solve slow 3 times
     },
     9: {
         name: "Mixed Ops IV",
         scenarios: ["basic", "fade", "jump", "ghost", "slow"],
-        waveSize: 3,
-        target: { total: 3 }
+        target: { total: 10 }  // ✅ Any 10 ships total
     },
     10: {
         name: "Blackout Introduction",
         scenarios: ["blackout"],
-        waveSize: 3,
-        target: { blackout: 3 }
+        target: { blackout: 3 }  // ✅ Solve blackout 3 times
     },
     11: {
         name: "Mixed Ops V",
         scenarios: ["basic", "fade", "jump", "ghost", "slow", "blackout"],
-        waveSize: 3,
-        target: { total: 3 }
+        target: { total: 10 }  // ✅ Any 10 ships total
     },
     12: {
         name: "SNR Introduction",
         scenarios: ["snr"],
-        waveSize: 3,
-        target: { snr: 3 }
+        target: { snr: 3 }  // ✅ Solve SNR 3 times
     },
     13: {
         name: "Endless Mode",
         scenarios: ["basic", "fade", "jump", "ghost", "slow", "blackout", "snr"],
-        waveSize: null,        // ← Infinite for endless
-        target: null
+        target: null  // No end
     }
 };
 
@@ -317,7 +304,6 @@ export default function GameTestPage() {
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
     // Add these 3 new state variables
     const [currentPhase, setCurrentPhase] = useState(1);
-    const gameLevelsRef = useRef(gameLevelsDefault);
     const [destroyedCounts, setDestroyedCounts] = useState({
         basic: 0,
         fade: 0,
@@ -328,24 +314,11 @@ export default function GameTestPage() {
         snr: 0,
         total: 0
     });
-    const [waveState, setWaveState] = useState({
-        totalShipsToSolve: 0,   // Target ships to destroy for this wave
-        shipsSolved: 0,         // How many player has destroyed
-        shipsActive: 0,         // How many ships currently on screen
-        waveComplete: false     // Is wave finished?
-    });
+    const [autoSpawnInterval, setAutoSpawnInterval] = useState(null);
 
-    const waveStateRef = useRef({
-        totalShipsToSolve: 0,
-        shipsSolved: 0,
-        shipsActive: 0,
-        waveComplete: false
-    });
-
-    const spawnTimeoutRef = useRef(null);  // For delayed spawning
 
     // 🌍 Global values
-    const BASE_SPEED = 0.25;
+    const BASE_SPEED = 0.5;
     const gameTimeRef = useRef(0);
     let PORT_WIDTH = 0;
     let SEA_WIDTH = 0;
@@ -360,10 +333,6 @@ export default function GameTestPage() {
         checkPhaseCompletion();
     }, [destroyedCounts, gameLevels]); // Triggers when either changes
 
-    // ✅ ADD THIS NEW EFFECT - Keep ref in sync
-    useEffect(() => {
-        gameLevelsRef.current = gameLevels;
-    }, [gameLevels]);
     // 🧩 Update game area on resize
     useEffect(() => {
         const updateDimensions = () => {
@@ -427,45 +396,25 @@ export default function GameTestPage() {
             // spawnShipWithScenario("slow");
             // spawnShipWithScenario("ghost");
             // spawnShipWithScenario("blackout");
-            spawnShipWithScenario("snr");
+            // spawnShipWithScenario("snr");
         };
 
         initGame();
         return () => app?.destroy(true);
     }, [dimensions]);
 
-    // Start wave when phase changes or game initializes
+    // Auto-spawn ships based on current phase
     useEffect(() => {
-
-        console.log('🔍 DEBUG: currentPhase:', currentPhase);
-
-        if (dimensions.width && dimensions.height && appRef.current) {
-
-            // Clear any pending spawn timeouts
-            if (spawnTimeoutRef.current) {
-                clearTimeout(spawnTimeoutRef.current);
-                spawnTimeoutRef.current = null;
-            }
-
-            // startWave();
-        } else {
-            console.log('❌ DEBUG: use effect dont work');
-
+        if (dimensions.width && dimensions.height) {
+            startAutoSpawn();
         }
 
         return () => {
-            if (spawnTimeoutRef.current) {
-                clearTimeout(spawnTimeoutRef.current);
-                spawnTimeoutRef.current = null;
+            if (autoSpawnInterval) {
+                clearInterval(autoSpawnInterval);
             }
         };
-    }, [currentPhase, dimensions, appRef.current]);
-
-    // Watch wave state for completion
-    useEffect(() => {
-        checkWaveCompletion();
-    }, [waveState.shipsActive, waveState.shipsSpawned, waveState.totalShipsInWave]);
-
+    }, [currentPhase, dimensions]); // Restart when phase changes
 
     // Format seconds into MM:SS format
     function formatTime(seconds) {
@@ -500,35 +449,38 @@ export default function GameTestPage() {
         ship.anchor.set(0.5);
         ship.scale.set(0.5);
         ship.x = dimensions.width + 100;
-        const id = "id" + Math.random().toString(16).slice(2);
-        const shipHeight = shipTexture.height * 0.5;
-        const margin = shipHeight / 2 + 20;
+        // Spawn ship at random Y position across full height with margin for visibility
+        const shipHeight = shipTexture.height * 0.5; // account for scale
+        const margin = shipHeight / 2 + 20; // margin from top/bottom edges
         ship.y = margin + Math.random() * (dimensions.height - 2 * margin);
-        ship.label = "AminShip_" + scenario + "_" + id;
-        ship.scenario = scenario;  // ← ADD THIS: Store scenario on ship
+        ship.label = "AminShip_" + scenario;
         ship.eventMode = 'static';
         ship.on('pointerdown', (ev) => {
-            console.log('Sprite clicked!', ship.label);
+            console.log('Sprite clicked!');
             shipIsClicked(ev, ship, scenario);
         });
+        // 👇 ADD THIS - Initialize explosion flag
         ship.isExploding = false;
 
         gameScene.addChild(ship);
-
-        // ← ADD THIS: Increment active ships count
-        updateWaveState({ shipsActive: waveStateRef.current.shipsActive + 1 });
-
         animateShip(ship, app, dimensions, scenario);
-
-        console.log(`🚢 Spawned ${scenario} ship. Active: ${waveStateRef.current.shipsActive}`);
     }
 
-    // Helper to update wave state (both ref and state)
-    function updateWaveState(updates) {
-        waveStateRef.current = { ...waveStateRef.current, ...updates };
-        setWaveState(waveStateRef.current);
-    }
+    // 🧱 Ship creation
+    function createShip(shipTexture, dim) {
+        const ship = new Sprite(shipTexture);
+        ship.anchor.set(0.5);
+        ship.x = dim.width + 100; // start off-screen on the RIGHT
+        ship.y = dim.height / 2;
+        ship.scale.set(0.5);
+        ship.eventMode = 'static';
 
+        ship.on('pointerdown', (ev) => {
+            console.log('Sprite clicked!');
+            ship.scale.set(0.6);
+        });
+        return ship;
+    }
 
     // 🧱 Ship animation
     function animateShip(ship, app, dim, scenario = "ghost") {
@@ -558,11 +510,11 @@ export default function GameTestPage() {
 
         if (scenario === "slow") applySlowDriftEffect(ship, app, dim);
         if (scenario === "ghost") applyDuplicateGhostEffect(ship, app, dim);
-        if (scenario === "blackout") applyCompleteBlackoutEffect(ship, app, dim, scenario);
+        if (scenario === "blackout") applyCompleteBlackoutEffect(ship, app, dim);
         if (scenario === "snr") applySNRDropEffect(ship, app, dim);
 
 
-        if (scenario !== "blackout") {
+        if (!["blackout"].includes(scenario)) {
             const movementTicker = () => {
                 // 👈 ADD THIS CHECK
                 if (!ship || ship.destroyed) {
@@ -724,11 +676,6 @@ export default function GameTestPage() {
 
                 app.ticker.remove(basicTicker);
 
-                // ✅ DECREMENT IMMEDIATELY - BEFORE explosion starts
-                updateWaveState({
-                    shipsActive: waveStateRef.current.shipsActive - 1
-                });
-
                 explodeShip(ship, app, dim, () => {
                     setScore(prevScore => Math.max(0, prevScore - 20));
                     setScoreChange(-20);
@@ -736,16 +683,8 @@ export default function GameTestPage() {
 
                     ship.destroy();
 
-
-
-                    // // ← NEW: Decrease active ships count, NO respawn
-                    // updateWaveState({
-                    //     shipsActive: waveStateRef.current.shipsActive - 1,
-                    //     shipsSpawned: waveStateRef.current.shipsSpawned - 1
-                    // });
-
-                    console.log(`🔍 AFTER UPDATE: shipsSpawned=${waveStateRef.current.shipsSpawned}, shipsActive=${waveStateRef.current.shipsActive}`);
-                    console.log(`💥 Ship (${ship.label}) hit port.`);
+                    // Always respawn (both learning and serious mode)
+                    spawnShipWithScenario(scenario);
                 }, true);
             }
         };
@@ -805,10 +744,7 @@ export default function GameTestPage() {
 
 
                     ship.destroy();
-                    // ← NEW: Decrease active ships count, NO respawn
-                    updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                    console.log(`💥 Ship (${ship.label}) hit port. Active ships: ${waveStateRef.current.shipsActive}`);
-
+                    spawnShipWithScenario(scenario);
                 }, true);
 
 
@@ -868,9 +804,7 @@ export default function GameTestPage() {
 
 
                     ship.destroy();
-                    // ← NEW: Decrease active ships count, NO respawn
-                    updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                    console.log(`💥 Ship (${ship.label}) hit port. Active ships: ${waveStateRef.current.shipsActive}`);
+                    spawnShipWithScenario(scenario);
                 }, true);
 
 
@@ -962,10 +896,10 @@ export default function GameTestPage() {
 
                     ship.destroy();
 
-                    // ← NEW: Decrease active ships count, NO respawn
-                    updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                    console.log(`💥 Ship (${ship.label}) hit port. Active ships: ${waveStateRef.current.shipsActive}`);
-
+                    const currentLevelState = gameLevels.find(l => l.scenario === scenario);
+                    if (!currentLevelState?.learned) {
+                        spawnShipWithScenario(scenario);
+                    }
                 }, true);
             }
         };
@@ -1032,40 +966,28 @@ export default function GameTestPage() {
 
                 app.ticker.remove(jumpTicker);
 
-                // explodeShip(ship, app, dim, () => {
-                //     setScore(prevScore => Math.max(0, prevScore - 20));
-                //     setScoreChange(-20);
-                //     setTimeout(() => setScoreChange(null), 1500);
-
-                //     // REPOSITION ship
-                //     ship.x = dim.width + 100;
-                //     const shipHeight = ship.height;
-                //     const margin = shipHeight / 2 + 20;
-                //     ship.y = margin + Math.random() * (dim.height - 2 * margin);
-                //     ship.alpha = 1;
-                //     ship.tint = 0xffffff;
-                //     ship.isExploding = false;
-
-                //     // Reset state for next journey
-                //     jumpTimer = 0;
-                //     eventLogged = false;
-
-                //     console.log('🔄 SERIOUS MODE: Ship repositioned, jump state reset');
-
-                //     // Restart ticker
-                //     app.ticker.add(jumpTicker);
-                // }, true);
-
                 explodeShip(ship, app, dim, () => {
                     setScore(prevScore => Math.max(0, prevScore - 20));
                     setScoreChange(-20);
                     setTimeout(() => setScoreChange(null), 1500);
 
-                    ship.destroy();
+                    // REPOSITION ship
+                    ship.x = dim.width + 100;
+                    const shipHeight = ship.height;
+                    const margin = shipHeight / 2 + 20;
+                    ship.y = margin + Math.random() * (dim.height - 2 * margin);
+                    ship.alpha = 1;
+                    ship.tint = 0xffffff;
+                    ship.isExploding = false;
 
-                    // ← NEW: Decrease active ships, NO respawn/reposition
-                    updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                    console.log('💥 SERIOUS MODE: Ship hit port, removed from wave');
+                    // Reset state for next journey
+                    jumpTimer = 0;
+                    eventLogged = false;
+
+                    console.log('🔄 SERIOUS MODE: Ship repositioned, jump state reset');
+
+                    // Restart ticker
+                    app.ticker.add(jumpTicker);
                 }, true);
 
                 return;
@@ -1074,6 +996,7 @@ export default function GameTestPage() {
 
         app.ticker.add(jumpTicker);
     }
+
 
     // 👻 Spoofing: Duplicate Positions (Ghost Ships)
     function applyDuplicateGhostEffect(ship, app, dim, scenario) {
@@ -1162,10 +1085,11 @@ export default function GameTestPage() {
 
                     ship.destroy();
 
-
-                    // ← NEW: Decrease active ships, NO respawn
-                    updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                    console.log(`💥 Ship (${ship.label}) hit port. Active ships: ${waveStateRef.current.shipsActive}`);
+                    // Respawn based on learned status
+                    const currentLevelState = gameLevels.find(l => l.scenario === scenario);
+                    if (!currentLevelState?.learned) {
+                        spawnShipWithScenario(scenario);
+                    }
                 }, true);
             }
         };
@@ -1173,316 +1097,43 @@ export default function GameTestPage() {
         app.ticker.add(ghostTicker);
     }
 
-    // 🐌 Slow Drift Effect (Meaconing / Replay Attack)
-    function applySlowDriftEffect(ship, app, dim, scenario) {
-        let currentSpeed = BASE_SPEED;
-        let frameCount = 0;
-        const delayCycle = 30; // every ~1s at 60fps
-        const slowFactor = 0.5; // how much slower the delay is
-        let toastShown = false;
+    // ⚠️ Spoofing: Position Jump effect
+    function applyPositionJumpEffectOld(ship, app, dim) {
+        const baseSpeed = 1;
+        let jumpTimer = 0;
+        const jumpInterval = 120; // frames (~2 seconds at 60fps)
+        const jumpDistance = 100; // pixels for jump (adjust as you like)
 
-        const slowTicker = () => {
-            // ✅ Check if ship still exists (new logic)
-            if (!ship || ship.destroyed) {
-                app.ticker.remove(slowTicker);
-                return;
+        app.ticker.add(() => {
+            // Normal left movement
+            ship.x -= baseSpeed;
+
+            // Count frames
+            jumpTimer++;
+
+            // Every few seconds, perform a "jump"
+            if (jumpTimer >= jumpInterval) {
+                jumpTimer = 0;
+
+                // Random small teleport (± range)
+                const randomX = (Math.random() - 0.5) * jumpDistance;
+                const randomY = (Math.random() - 0.5) * jumpDistance;
+
+                ship.x += randomX;
+                ship.y += randomY;
+
+                // Flash red for a moment to show the anomaly
+                ship.tint = 0xff3333;
+                setTimeout(() => {
+                    ship.tint = 0xffffff;
+                }, 200);
             }
 
-            const levelLearned = gameLevels.find(lvl => lvl.scenario === scenario)?.learned;
-
-            // ✅ Show toast/log once when ship reaches 80% (new logic)
-            if (ship.x <= dim.width * 0.8 && !toastShown) {
-                addEventLog("Vessel exhibiting slow drift patterns detected", "⚠️");
-
-                // Only show toast in learning mode (not learned yet)
-                if (!levelLearned) {
-                    showToast(
-                        "Suspicious vessel with erratic movement detected! Click to investigate.",
-                        "warning"
-                    );
-                }
-
-                toastShown = true;
-            }
-
-            // ✅ ANIMATION LOGIC (from old working version)
-            frameCount++;
-
-            // Every ~1 second, randomly change speed and tint
-            if (frameCount % delayCycle === 0) {
-                const random = Math.random();
-
-                if (random < 0.4) {
-                    // Enter "delay" phase — move very slow
-                    currentSpeed = BASE_SPEED * slowFactor;
-                    ship.tint = 0xffcc00; // yellow tint for signal delay
-                } else if (random < 0.7) {
-                    // Small "dash" skip forward — lag catch-up
-                    currentSpeed = BASE_SPEED * 3;
-                    ship.tint = 0xff8800; // orange tint
-                } else {
-                    // Normal state
-                    currentSpeed = BASE_SPEED;
-                    ship.tint = 0xffffff; // white (normal)
-                }
-            }
-
-            // ✅ Move ship with variable speed (animation)
-            if (!ship.isExploding) {
-                ship.x -= currentSpeed;
-            }
-
-            // ✅ Port collision detection (new logic)
-            if (ship.x < PORT_WIDTH + ship.width && !ship.isExploding) {
-                ship.isExploding = true;
-
-                addEventLog("Slow drift vessel breached port", "🚨");
-
-                app.ticker.remove(slowTicker);
-
-                // ✅ Decrement active ships BEFORE explosion
-                updateWaveState({
-                    shipsActive: waveStateRef.current.shipsActive - 1
-                });
-
-                explodeShip(ship, app, dim, () => {
-                    setScore(prevScore => Math.max(0, prevScore - 20));
-                    setScoreChange(-20);
-                    setTimeout(() => setScoreChange(null), 1500);
-                    ship.destroy();
-                }, true);
-            }
-        };
-
-        app.ticker.add(slowTicker);
-    }
-
-    // ⚡ Complete Blackout Effect - Freezes ship and shows countdown
-    // ⚡ Complete Blackout Effect - Freezes ship and shows countdown, then EXPLODES
-    function applyCompleteBlackoutEffect(ship, app, dim, scenario) {
-        let isFrozen = false;
-        let freezeDuration = 5; // seconds
-        let freezeStartTime = 0;
-        let toastShown = false;
-
-        // Create a visible countdown text near the ship
-        const timerText = new Text("", {
-            fill: "#ff4444",
-            fontSize: 20,
-            fontWeight: "bold",
-            stroke: "#000000",
-            strokeThickness: 4,
+            // 🎯 Use centralized collision handler
+            handlePortCollision(ship, app, dim, "jump");
         });
-        timerText.anchor.set(0.5);
-        ship.parent.addChild(timerText);
-
-        const blackoutTicker = () => {
-            // ✅ Check if ship still exists
-            if (!ship || ship.destroyed) {
-                timerText.destroy(); // Clean up text
-                app.ticker.remove(blackoutTicker);
-                return;
-            }
-
-            const levelLearned = gameLevels.find(lvl => lvl.scenario === scenario)?.learned;
-
-            if (!isFrozen) {
-                // ✅ Move ship normally (with isExploding check)
-                if (!ship.isExploding) {
-                    ship.x -= BASE_SPEED;
-                }
-
-                // ✅ Show toast/log when ship reaches 80%
-                if (ship.x <= dim.width * 0.8 && !toastShown) {
-                    addEventLog("Complete GNSS blackout detected - jamming attack", "⚠️");
-
-                    if (!levelLearned) {
-                        showToast(
-                            "Critical: Complete signal blackout detected! Click to investigate.",
-                            "warning"
-                        );
-                    }
-
-                    toastShown = true;
-                }
-
-                // Trigger blackout when ship reaches middle of screen (60%)
-                if (ship.x < dim.width * 0.6 && ship.x > dim.width * 0.4) {
-                    isFrozen = true;
-                    freezeStartTime = app.ticker.lastTime;
-                    ship.tint = 0x555555; // Gray tint for frozen state
-                    console.log("🚨 Blackout triggered! Ship frozen.");
-                }
-            } else {
-                // ✅ Ship is frozen - show countdown
-                const elapsed = (app.ticker.lastTime - freezeStartTime) / 1000;
-                const remaining = Math.max(0, freezeDuration - elapsed);
-
-                // Update countdown text
-                timerText.text = `${remaining.toFixed(1)}s`;
-                timerText.x = ship.x;
-                timerText.y = ship.y - 50;
-
-                // ⏰ END OF FREEZE → EXPLODE SHIP (NEW LOGIC)
-                if (remaining <= 0 && !ship.isExploding) {
-                    ship.isExploding = true;
-
-                    addEventLog("Blackout timer expired - vessel auto-destroyed by port defenses", "⏰");
-
-                    // Clean up countdown text
-                    timerText.destroy();
-
-                    app.ticker.remove(blackoutTicker);
-
-                    // ✅ Decrement active ships BEFORE explosion
-                    updateWaveState({
-                        shipsActive: waveStateRef.current.shipsActive - 1
-                    });
-
-                    // EXPLODE the ship with same logic as port collision
-                    explodeShip(ship, app, dim, () => {
-                        ship.destroy();
-                        console.log(`⏰ Blackout ship destroyed after timer expired`);
-                    }, true);
-                }
-            }
-
-            // ✅ Port collision detection
-            if (ship.x < PORT_WIDTH + ship.width && !ship.isExploding) {
-                ship.isExploding = true;
-
-                addEventLog("Blackout vessel breached port", "🚨");
-
-                // Clean up countdown text
-                timerText.destroy();
-
-                app.ticker.remove(blackoutTicker);
-
-                // ✅ Decrement active ships BEFORE explosion
-                updateWaveState({
-                    shipsActive: waveStateRef.current.shipsActive - 1
-                });
-
-                explodeShip(ship, app, dim, () => {
-                    ship.destroy();
-                }, true);
-            }
-        };
-
-        app.ticker.add(blackoutTicker);
     }
 
-    // 📶 SNR Drop Effect - Signal degradation with red aura + signal bar
-    function applySNRDropEffect(ship, app, dim, scenario) {
-        const baseSpeed = BASE_SPEED;
-        let toastShown = false;
-
-        // 🔴 Create red circular glow around ship
-        const glow = new Graphics();
-        glow.circle(0, 0, 40);
-        glow.fill({ color: 0xff0000, alpha: 0.2 }); // starts soft
-        ship.parent.addChild(glow);
-
-        // 📶 Create signal strength bar (above ship)
-        const snrBarContainer = new Container();
-        const snrBarBg = new Graphics();
-        snrBarBg.rect(-25, -8, 50, 6).fill({ color: 0x222222 }); // background (dark gray)
-        const snrBar = new Graphics();
-        snrBar.rect(-25, -8, 50, 6).fill({ color: 0x00ff00 }); // start green
-        snrBarContainer.addChild(snrBarBg);
-        snrBarContainer.addChild(snrBar);
-        ship.parent.addChild(snrBarContainer);
-
-        // 🎚️ Variables for animation
-        let targetSignal = 1; // 1 = full signal
-        let currentSignal = 1;
-        let frameCount = 0;
-
-        const snrTicker = () => {
-            // ✅ Check if ship still exists
-            if (!ship || ship.destroyed) {
-                glow.destroy(); // Clean up glow
-                snrBarContainer.destroy(); // Clean up signal bar
-                app.ticker.remove(snrTicker);
-                return;
-            }
-
-            const levelLearned = gameLevels.find(lvl => lvl.scenario === scenario)?.learned;
-
-            // ✅ Move ship normally
-            if (!ship.isExploding) {
-                ship.x -= baseSpeed;
-            }
-
-            // ✅ Show toast/log once when ship reaches 80%
-            if (ship.x <= dim.width * 0.8 && !toastShown) {
-                addEventLog("SNR degradation detected - signal quality dropping", "⚠️");
-
-                if (!levelLearned) {
-                    showToast(
-                        "Warning: Signal-to-Noise Ratio degrading rapidly! Click to investigate.",
-                        "warning"
-                    );
-                }
-
-                toastShown = true;
-            }
-
-            // ✅ Sync visuals with ship position
-            glow.x = ship.x;
-            glow.y = ship.y;
-            snrBarContainer.x = ship.x;
-            snrBarContainer.y = ship.y - 60;
-
-            // 📊 Every ~1 second → randomly change signal strength
-            frameCount++;
-            if (frameCount % 60 === 0) {
-                targetSignal = 0.2 + Math.random() * 0.8; // Random between 0.2 and 1.0
-            }
-
-            // 🔄 Smooth interpolation toward target signal
-            currentSignal += (targetSignal - currentSignal) * 0.1;
-
-            // 🔥 Red glow stronger when signal is weak
-            const glowAlpha = 0.5 + (1 - currentSignal) * 0.8;
-            glow.alpha = glowAlpha;
-
-            // 🟩 Update signal bar color and width based on signal strength
-            const barWidth = 50 * currentSignal;
-            snrBar.clear();
-
-            let color = 0x00ff00; // Green - strong signal
-            if (currentSignal < 0.6) color = 0xffff00; // Yellow - degrading
-            if (currentSignal < 0.3) color = 0xff0000; // Red - critical
-
-            snrBar.rect(-25, -8, barWidth, 6).fill({ color });
-
-            // ✅ Port collision detection
-            if (ship.x < PORT_WIDTH + ship.width && !ship.isExploding) {
-                ship.isExploding = true;
-
-                addEventLog("SNR degraded vessel breached port", "🚨");
-
-                // Clean up visuals
-                glow.destroy();
-                snrBarContainer.destroy();
-
-                app.ticker.remove(snrTicker);
-
-                // ✅ Decrement active ships BEFORE explosion
-                updateWaveState({
-                    shipsActive: waveStateRef.current.shipsActive - 1
-                });
-
-                explodeShip(ship, app, dim, () => {
-                    ship.destroy();
-                    console.log(`📶 SNR ship destroyed on port collision`);
-                }, true);
-            }
-        };
-
-        app.ticker.add(snrTicker);
-    }
 
     // 🎮 Game Control Functions
     const handlePause = () => {
@@ -1514,12 +1165,11 @@ export default function GameTestPage() {
     async function shipIsClicked(ev, ship, scenario) {
         console.log("Ship clicked event:", ship);
 
-        // ✅ READ FROM REF INSTEAD OF STATE
-        const level = gameLevelsRef.current.find(l => l.scenario === scenario);
+        const level = gameLevels.find(l => l.scenario === scenario);
         if (!level) return;
 
         handlePause();
-        setCurrentLevel({ ...level, ship }); // ← ADD ship to the level object
+        setCurrentLevel(level);
 
         // Check if serious mode (learned = true) or learning mode (learned = false)
         if (level.learned) {
@@ -1537,7 +1187,7 @@ export default function GameTestPage() {
 
         if (isCorrect) {
             // Requirement #6: Correct answer → +50 score, ship destroyed, respawns
-            handleCorrectAnswer(currentLevel.scenario, currentLevel.ship);
+            handleCorrectAnswer(currentLevel.scenario);
         } else {
             // Requirement #6: Wrong answer → -20 score, ship continues
             handleWrongAnswer();
@@ -1547,11 +1197,40 @@ export default function GameTestPage() {
     }
 
     // ✅ Handle correct answer
-    function handleCorrectAnswer(scenario, clickedShip) {
+    function handleCorrectAnswer(scenario) {
         // 👇 CHECK LEARNING MODE **BEFORE** UPDATING STATE
         const currentLevel = gameLevels.find(l => l.scenario === scenario);
         const isLearningMode = !currentLevel?.learned;
 
+        // // Only mark as learned and unlock cards in LEARNING MODE
+        // // ✅ NEW
+        // if (isLearningMode) {
+        //     // Mark level as learned
+        //     setGameLevels(prevLevels => {
+        //         const updated = prevLevels.map(level =>
+        //             level.scenario === scenario
+        //                 ? { ...level, learned: true }
+        //                 : level
+        //         );
+
+        //         return updated;
+        //     });
+
+        //     // Add learning card if not already unlocked
+        //     const cardAlreadyUnlocked = learningCards.some(card => card.id === scenario);
+        //     if (!cardAlreadyUnlocked) {
+        //         const cardToUnlock = allLearningCardsLibrary.find(card => card.id === scenario);
+        //         if (cardToUnlock) {
+        //             setLearningCards(prev => [...prev, cardToUnlock]);
+        //             addEventLog(`Threat neutralized: ${cardToUnlock.title} attack successfully identified`, "✅");
+        //             toast.success(`🎓 New learning card unlocked: "${cardToUnlock.title}"! Check the menu.`);
+        //             console.log(`🎓 Learning card "${cardToUnlock.title}" unlocked!`);
+        //         }
+        //     }
+        // } else {
+        //     // Serious mode - just log the success (no card unlock)
+        //     addEventLog(`Threat neutralized: ${scenario} attack correctly identified`, "✅");
+        // }
         addEventLog(`Threat neutralized: ${scenario} attack successfully identified`, "✅");
         // toast.success(`🎓 New learning card unlocked: "${cardToUnlock.title}"! Check the menu.`);
 
@@ -1560,9 +1239,11 @@ export default function GameTestPage() {
         setScoreChange(+50);
         setTimeout(() => setScoreChange(null), 1500);
 
-        // ← CHANGE: Use the ship from currentLevel instead of searching
-        const ship = clickedShip; // ← Get the actual clicked ship
-
+        // Find and explode the ship
+        const gameScene = gameSceneRef.current;
+        const ship = gameScene.children.find(child =>
+            child.label && child.label.includes(scenario)
+        );
 
         // Track destroyed ships
         setDestroyedCounts(prev => ({
@@ -1572,15 +1253,15 @@ export default function GameTestPage() {
         }));
 
 
-        // ✅ ADD THIS LINE:
-        updateWaveState({ shipsSolved: waveStateRef.current.shipsSolved + 1 });
 
         if (ship) {
             explodeShip(ship, appRef.current, dimensions, () => {
                 ship.destroy();
 
-                updateWaveState({ shipsActive: waveStateRef.current.shipsActive - 1 });
-                console.log(`✅ Ship destroyed correctly. Active: ${waveStateRef.current.shipsActive}`);
+                // ✅ ALWAYS respawn in both modes (after 1 second delay)
+                setTimeout(() => {
+                    spawnShipWithScenario(scenario);
+                }, 1000);
 
                 handleResume();
             }, false);
@@ -1618,30 +1299,7 @@ export default function GameTestPage() {
 
 
         if (solved && currentLevel) {
-            // ✅ MARK AS LEARNED IMMEDIATELY WHEN MODAL SOLVED
-            setGameLevels(prevLevels => {
-                const updated = prevLevels.map(level =>
-                    level.scenario === currentLevel.scenario
-                        ? { ...level, learned: true }
-                        : level
-                );
-                console.log(`🎓 ${currentLevel.scenario} marked as learned after modal!`);
-                return updated;
-            });
-
-            // ✅ UPDATE REF IMMEDIATELY (synchronous)
-            gameLevelsRef.current = gameLevelsRef.current.map(level =>
-                level.scenario === currentLevel.scenario
-                    ? { ...level, learned: true }
-                    : level
-            );
-
-            // ✅ UPDATE STATE (async, for UI)
-            setGameLevels(gameLevelsRef.current);
-
-            console.log(`🎓 ${currentLevel.scenario} marked as learned after modal!`);
-
-            handleCorrectAnswer(currentLevel.scenario, currentLevel.ship);
+            handleCorrectAnswer(currentLevel.scenario);
         } else if (!solved && currentLevel) {
             handleWrongAnswer();
         } else {
@@ -1738,10 +1396,60 @@ export default function GameTestPage() {
                 // Call callback if provided
                 if (callback) callback(ship);
 
+                console.log('💥 Ship exploded and respawned!');
             }
         };
 
         app.ticker.add(explosionTicker);
+    }
+
+    // 🎯 Centralized port collision detection and handling
+    function handlePortCollision(ship, app, dim, scenario) {
+        const reachedPort = ship.x < PORT_WIDTH + ship.width;
+
+        if (reachedPort) {
+            console.log(`🚨 Ship with scenario "${scenario}" reached the port!`);
+
+            // Any ship that reaches port explodes and respawns
+            explodeShip(ship, app, dim, () => {
+                setScore(prevScore => Math.max(0, prevScore - 20));
+                setScoreChange(-20);
+                setTimeout(() => setScoreChange(null), 1500);
+                console.log('Ship respawned after port explosion');
+            }, true);
+
+
+            ship.x = dim.width + 100; // reset position off-screen
+
+            return true; // collision occurred
+        }
+
+        return false; // no collision
+    }
+
+    // Add these helper functions near your other handlers
+    function runLearningFadeTest() {
+        // Set fade to learning mode (learned: false)
+        setGameLevels(prev =>
+            prev.map(l => (l.scenario === "jump" ? { ...l, learned: false } : l))
+        );
+        // Spawn a fade ship (learning mode uses applyFadeEffect)
+        setTimeout(() => {
+            spawnShipWithScenario("jump");
+            console.log("▶️ Learning mode: fade ship spawned");
+        }, 200);
+    }
+
+    function runSeriousFadeTest() {
+        // Set fade to serious mode (learned: true)
+        setGameLevels(prev =>
+            prev.map(l => (l.scenario === "jump" ? { ...l, learned: true } : l))
+        );
+        // Spawn a fade ship (serious mode uses applyFadeEffectSerious)
+        setTimeout(() => {
+            spawnShipWithScenario("jump");
+            console.log("▶️ Serious mode: fade ship spawned");
+        }, 200);
     }
 
     function checkPhaseCompletion() {
@@ -1833,6 +1541,31 @@ export default function GameTestPage() {
         }
     }
 
+    function startAutoSpawn() {
+        // Clear existing interval
+        if (autoSpawnInterval) {
+            clearInterval(autoSpawnInterval);
+        }
+
+        const phase = GAME_PHASES[currentPhase];
+        if (!phase) return;
+
+        const spawnDelay = 10000; // 5 seconds between spawns
+
+        const interval = setInterval(() => {
+            if (isPaused) return; // Don't spawn if paused
+
+            // Pick random scenario from current phase
+            const scenarios = phase.scenarios;
+            const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+
+            spawnShipWithScenario(randomScenario);
+            console.log(`🚢 Auto-spawned: ${randomScenario} (Phase ${currentPhase})`);
+        }, spawnDelay);
+
+        setAutoSpawnInterval(interval);
+    }
+
     function clearAllShips() {
         const gameScene = gameSceneRef.current;
         if (!gameScene) return;
@@ -1851,147 +1584,6 @@ export default function GameTestPage() {
 
         console.log(`🧹 Cleared ${shipsToRemove.length} ships for phase transition`);
     }
-
-    // 🌊 Start a new wave for current phase
-    function startWave() {
-        const phase = GAME_PHASES[currentPhase];
-        if (!phase) return;
-        if (currentPhase === 13) {
-            startEndlessMode();
-            return;
-        }
-
-        // Calculate target from phase.target
-        let targetToSolve = 0;
-        if (phase.target.total) {
-            targetToSolve = phase.target.total;
-        } else {
-            const scenario = Object.keys(phase.target)[0];
-            targetToSolve = phase.target[scenario];
-        }
-
-        updateWaveState({
-            totalShipsToSolve: targetToSolve,
-            shipsSolved: 0,
-            shipsActive: 0,
-            waveComplete: false
-        });
-
-        toast(`🌊 Wave ${currentPhase}: ${phase.name}`, { icon: '⚓' });
-        addEventLog(`Wave ${currentPhase} initiated: Need to solve ${targetToSolve} ships`, "🌊");
-        spawnNextShipInWave();
-    }
-
-    // 🚢 Spawn next ship in wave with delay
-    function spawnNextShipInWave() {
-        const phase = GAME_PHASES[currentPhase];
-        if (!phase) return;
-
-        const { totalShipsToSolve, shipsSolved, shipsActive } = waveStateRef.current;
-
-        // ✅ GATE 1: Stop spawning once target is reached
-        if (shipsSolved >= totalShipsToSolve) {
-            console.log(`✅ Target reached (${shipsSolved}/${totalShipsToSolve}). Waiting for cleanup...`);
-            return;
-        }
-
-        // Don't spawn if paused or modals open
-        if (isPaused || showLevelModal || showQuickDropdown) {
-            spawnTimeoutRef.current = setTimeout(() => spawnNextShipInWave(), 500);
-            return;
-        }
-
-        // ✅ GATE 2: Don't spawn too many ships at once
-        const MAX_SHIPS_ON_SCREEN = 3;
-        if (shipsActive >= MAX_SHIPS_ON_SCREEN) {
-            spawnTimeoutRef.current = setTimeout(() => spawnNextShipInWave(), 1000);
-            return;
-        }
-
-        // Pick random scenario from current phase
-        const scenarios = phase.scenarios;
-        const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-
-        // Spawn ship
-        spawnShipWithScenario(randomScenario);
-
-        // Calculate delay before next spawn
-        const baseDelay = currentPhase <= 3 ? 3000 :
-            currentPhase <= 7 ? 2500 :
-                currentPhase <= 10 ? 2000 : 1500;
-        const randomDelay = baseDelay + Math.random() * 1000;
-
-        // Schedule next spawn
-        spawnTimeoutRef.current = setTimeout(() => spawnNextShipInWave(), randomDelay);
-    }
-
-    // 🔄 Check if wave is complete and advance phase
-    function checkWaveCompletion() {
-        const { totalShipsToSolve, shipsSolved, shipsActive, waveComplete } = waveStateRef.current;
-
-        // Skip if already marked complete or in endless mode
-        if (waveComplete || currentPhase === 13) return;
-
-        // ✅ Skip if not initialized
-        if (totalShipsToSolve === 0) return;
-
-        // ✅ Wave is complete when: target reached AND all ships destroyed
-        if (shipsSolved >= totalShipsToSolve && shipsActive === 0) {
-            console.log(`🎉 Wave ${currentPhase} complete! ${shipsSolved} ships solved, 0 active.`);
-            updateWaveState({ waveComplete: true });
-            checkPhaseCompletion();
-        } else {
-            console.log(`📊 Wave progress: ${shipsSolved}/${totalShipsToSolve} solved, ${shipsActive} active`);
-        }
-    }
-
-    // ♾️ Endless mode spawning
-    function startEndlessMode() {
-        console.log('♾️ Endless mode activated');
-        toast('♾️ Endless Mode: Survive as long as you can!', { icon: '🔥', duration: 6000 });
-        addEventLog('Endless mode activated - continuous hostile vessel waves incoming', "♾️");
-
-        // Initialize endless state
-        updateWaveState({
-            totalShipsInWave: Infinity,
-            shipsSpawned: 0,
-            shipsActive: 0,
-            waveComplete: false
-        });
-
-        spawnNextEndlessShip();
-    }
-
-    // 🚢 Spawn ships continuously in endless mode
-    function spawnNextEndlessShip() {
-        if (currentPhase !== 13) return; // Exit if no longer in endless mode
-
-        // Don't spawn if paused or modals open
-        if (isPaused || showLevelModal || showQuickDropdown) {
-            spawnTimeoutRef.current = setTimeout(() => spawnNextEndlessShip(), 500);
-            return;
-        }
-
-        // Limit simultaneous ships (max 5 in endless mode)
-        if (waveStateRef.current.shipsActive >= 5) {
-            spawnTimeoutRef.current = setTimeout(() => spawnNextEndlessShip(), 1000);
-            return;
-        }
-
-        const phase = GAME_PHASES[13];
-        const scenarios = phase.scenarios;
-        const randomScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-
-        spawnShipWithScenario(randomScenario);
-
-        // Update spawned count
-        updateWaveState({ shipsSpawned: waveStateRef.current.shipsSpawned + 1 });
-
-        // Fast spawning in endless mode (1-2 seconds)
-        const randomDelay = 1000 + Math.random() * 1000;
-        spawnTimeoutRef.current = setTimeout(() => spawnNextEndlessShip(), randomDelay);
-    }
-
 
     // 🧱 Layout UI
     return (
@@ -2060,18 +1652,6 @@ export default function GameTestPage() {
                 <div className="text-cyan-400 font-bold text-sm mb-2">
                     Phase {currentPhase}: {GAME_PHASES[currentPhase]?.name}
                 </div>
-
-                {currentPhase !== 13 && (
-                    <div className="text-amber-400 text-xs mb-2">
-                        Target: {waveState.shipsSolved}/{waveState.totalShipsToSolve} solved
-                    </div>
-                )}
-
-                {/* Active Ships */}
-                <div className="text-slate-300 text-xs mb-2">
-                    Active: {waveState.shipsActive} 🚢
-                </div>
-                {/* Destroyed Counts */}
                 <div className="text-slate-300 text-xs space-y-1">
                     {Object.entries(destroyedCounts).map(([key, count]) =>
                         key !== 'total' && count > 0 && (
@@ -2081,16 +1661,9 @@ export default function GameTestPage() {
                         )
                     )}
                     <div className="border-t border-slate-600 pt-1 mt-1 font-semibold">
-                        Total Destroyed: {destroyedCounts.total}
+                        Total: {destroyedCounts.total}
                     </div>
                 </div>
-
-                {/* Phase Target */}
-                {GAME_PHASES[currentPhase]?.target && (
-                    <div className="text-green-400 text-xs mt-2 border-t border-slate-600 pt-2">
-                        Target: {JSON.stringify(GAME_PHASES[currentPhase].target)}
-                    </div>
-                )}
             </div>
         </div>
     );

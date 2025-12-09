@@ -7,6 +7,8 @@ import BottomToolbar from "../components/BottomToolbar";
 import LevelModal from "../components/LevelModal";
 import toast from 'react-hot-toast';
 import QuickDropdown from "../components/QuickDropdown";
+import LearningModalInteractive from "../components/LearningModalInteractive";
+
 const modalsDefault = {
     fade: {
         title: "Signal Fade",
@@ -68,7 +70,6 @@ const gameLevelsDefault = [
     { scenario: "blackout", learned: false, modalInfo: modalsDefault.blackout },
     { scenario: "snr", learned: false, modalInfo: modalsDefault.snr }
 ];
-
 
 // 📚 Static library of all learning cards (one per scenario)
 const allLearningCardsLibrary = [
@@ -415,8 +416,8 @@ export default function GameTestPage() {
             gameSceneRef.current = gameScene;
 
             const [seaTexture, portTexture, shipTexture, rocketTexture] = await Promise.all([
-                Assets.load("/images/gameplay/seaTexture.png"),
-                Assets.load("/images/gameplay/port.png"),
+                Assets.load("/images/gameplay/water_tile.png"),
+                Assets.load("/images/gameplay/port_custom.png"),
                 Assets.load("/images/gameplay/cargo.png"),
                 Assets.load("/images/gameplay/rocket.png"),
             ]);
@@ -481,7 +482,10 @@ export default function GameTestPage() {
         SEA_WIDTH = dim.width - portWidth;
 
         const port = new TilingSprite({ texture: portTexture, width: portWidth, height: dim.height });
-        port.x = 0; port.y = 0;
+        port.x = 0; 
+        port.y = 0;
+         // Scale your custom port tile to look sharp
+        port.tileScale.set(0.15); // or 0.5 depending on your image
         scene.addChild(port);
 
         const sea = new TilingSprite({ texture: seaTexture, width: SEA_WIDTH, height: dim.height });
@@ -848,34 +852,34 @@ export default function GameTestPage() {
                     shipsActive: waveStateRef.current.shipsActive - 1
                 });
 
-                // Example: In your ship scenarios
-                fireRocketStrike(ship, app, dim, () => {
-                    setScore(prevScore => Math.max(0, prevScore - 20));
-                    setScoreChange(-20);
-                    setTimeout(() => setScoreChange(null), 1500);
-
-                    ship.destroy();
-                    console.log('🎆 Ship destroyed by rocket strike!');
-                });
-
-                // explodeShip(ship, app, dim, () => {
+                // // Example: In your ship scenarios
+                // fireRocketStrike(ship, app, dim, () => {
                 //     setScore(prevScore => Math.max(0, prevScore - 20));
                 //     setScoreChange(-20);
                 //     setTimeout(() => setScoreChange(null), 1500);
 
                 //     ship.destroy();
+                //     console.log('🎆 Ship destroyed by rocket strike!');
+                // });
+
+                explodeShip(ship, app, dim, () => {
+                    setScore(prevScore => Math.max(0, prevScore - 20));
+                    setScoreChange(-20);
+                    setTimeout(() => setScoreChange(null), 1500);
+
+                    ship.destroy();
 
 
 
-                //     // // ← NEW: Decrease active ships count, NO respawn
-                //     // updateWaveState({
-                //     //     shipsActive: waveStateRef.current.shipsActive - 1,
-                //     //     shipsSpawned: waveStateRef.current.shipsSpawned - 1
-                //     // });
+                    // // ← NEW: Decrease active ships count, NO respawn
+                    // updateWaveState({
+                    //     shipsActive: waveStateRef.current.shipsActive - 1,
+                    //     shipsSpawned: waveStateRef.current.shipsSpawned - 1
+                    // });
 
-                //     console.log(`🔍 AFTER UPDATE: shipsSpawned=${waveStateRef.current.shipsSpawned}, shipsActive=${waveStateRef.current.shipsActive}`);
-                //     console.log(`💥 Ship (${ship.label}) hit port.`);
-                // }, true);
+                    console.log(`🔍 AFTER UPDATE: shipsSpawned=${waveStateRef.current.shipsSpawned}, shipsActive=${waveStateRef.current.shipsActive}`);
+                    console.log(`💥 Ship (${ship.label}) hit port.`);
+                }, true);
             }
         };
 
@@ -2001,6 +2005,8 @@ export default function GameTestPage() {
 
     // 🧱 Layout UI
     return (
+        <>
+       
         <div className="flex flex-col h-screen bg-slate-900" data-wave-alert style={{ animation: 'none' }}>
             {/* 🧭 Gaming HUD Toolbar */}
             <GameToolbar
@@ -2024,6 +2030,16 @@ export default function GameTestPage() {
             {/* 🎮 Game Container */}
             <div ref={containerRef} className="flex-1 relative" />
 
+              {/* Bottom Toolbar with Game Controls */}
+            <BottomToolbar
+                isPaused={isPaused}
+                onPause={handlePause}
+                onResume={handleResume}
+                onExit={handleExit}
+            />
+            </div>
+          
+
             {/* Side Menu Component */}
             <SideMenu
                 isOpen={menuOpen}
@@ -2034,10 +2050,11 @@ export default function GameTestPage() {
                 eventLogs={eventLogs}
                 learningCards={learningCards}
             />
-            {/* Level Modal */}
-            <LevelModal
+       
+            <LearningModalInteractive
                 isOpen={showLevelModal}
-                levelInfo={currentLevel}
+                scenarioData={currentLevel?.modalInfo}
+                scenarioType={currentLevel?.scenario}
                 onClose={handleModalClose}
                 onSolve={handleModalSolve}
             />
@@ -2055,51 +2072,9 @@ export default function GameTestPage() {
                 }}
             />
 
-            {/* Bottom Toolbar with Game Controls */}
-            <BottomToolbar
-                isPaused={isPaused}
-                onPause={handlePause}
-                onResume={handleResume}
-                onExit={handleExit}
-            />
-            {/* Phase Progress Display */}
-            <div className="fixed top-20 left-4 z-40 bg-slate-800/90 backdrop-blur-sm border border-slate-600 rounded-lg p-4 shadow-lg">
-                <div className="text-cyan-400 font-bold text-sm mb-2">
-                    Phase {currentPhase}: {GAME_PHASES[currentPhase]?.name}
-                </div>
-
-                {currentPhase !== 13 && (
-                    <div className="text-amber-400 text-xs mb-2">
-                        Target: {waveState.shipsSolved}/{waveState.totalShipsToSolve} solved
-                    </div>
-                )}
-
-                {/* Active Ships */}
-                <div className="text-slate-300 text-xs mb-2">
-                    Active: {waveState.shipsActive} 🚢
-                </div>
-                {/* Destroyed Counts */}
-                <div className="text-slate-300 text-xs space-y-1">
-                    {Object.entries(destroyedCounts).map(([key, count]) =>
-                        key !== 'total' && count > 0 && (
-                            <div key={key}>
-                                {key}: {count}
-                            </div>
-                        )
-                    )}
-                    <div className="border-t border-slate-600 pt-1 mt-1 font-semibold">
-                        Total Destroyed: {destroyedCounts.total}
-                    </div>
-                </div>
-
-                {/* Phase Target */}
-                {GAME_PHASES[currentPhase]?.target && (
-                    <div className="text-green-400 text-xs mt-2 border-t border-slate-600 pt-2">
-                        Target: {JSON.stringify(GAME_PHASES[currentPhase].target)}
-                    </div>
-                )}
-            </div>
-        </div>
+          
+        
+         </>
     );
 }
 
@@ -2128,3 +2103,41 @@ there will be new type of ship which is the easy enemy ship, one click and selec
 
 */
 
+  {/* Phase Progress Display */}
+            // <div className="fixed top-20 left-4 z-40 bg-slate-800/90 backdrop-blur-sm border border-slate-600 rounded-lg p-4 shadow-lg">
+            //     <div className="text-cyan-400 font-bold text-sm mb-2">
+            //         Phase {currentPhase}: {GAME_PHASES[currentPhase]?.name}
+            //     </div>
+
+            //     {currentPhase !== 13 && (
+            //         <div className="text-amber-400 text-xs mb-2">
+            //             Target: {waveState.shipsSolved}/{waveState.totalShipsToSolve} solved
+            //         </div>
+            //     )}
+
+            //     {/* Active Ships */}
+            //     <div className="text-slate-300 text-xs mb-2">
+            //         Active: {waveState.shipsActive} 🚢
+            //     </div>
+            //     {/* Destroyed Counts */}
+            //     <div className="text-slate-300 text-xs space-y-1">
+            //         {Object.entries(destroyedCounts).map(([key, count]) =>
+            //             key !== 'total' && count > 0 && (
+            //                 <div key={key}>
+            //                     {key}: {count}
+            //                 </div>
+            //             )
+            //         )}
+            //         <div className="border-t border-slate-600 pt-1 mt-1 font-semibold">
+            //             Total Destroyed: {destroyedCounts.total}
+            //         </div>
+            //     </div>
+
+            //     {/* Phase Target */}
+            //     {GAME_PHASES[currentPhase]?.target && (
+            //         <div className="text-green-400 text-xs mt-2 border-t border-slate-600 pt-2">
+            //             Target: {JSON.stringify(GAME_PHASES[currentPhase].target)}
+            //         </div>
+            //     )}
+            
+            // </div>

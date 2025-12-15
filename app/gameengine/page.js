@@ -537,8 +537,18 @@ export default function GameTestPage() {
 
     // 🧱 Ship animation
     function animateShip(ship, app, dim, scenario = "ghost") {
-        const speed = BASE_SPEED;
-
+       // Dynamic speed based on current phase
+    let speedMultiplier = 1.0;
+    
+    if (currentPhase >= 3 && currentPhase <= 5) {
+        speedMultiplier = 1.3; // Mixed Ops I & II - 30% faster
+    } else if (currentPhase >= 7 && currentPhase <= 9) {
+        speedMultiplier = 1.5; // Mixed Ops III & IV - 50% faster
+    } else if (currentPhase >= 11) {
+        speedMultiplier = 1.7; // Mixed Ops V & Endless - 70% faster
+    }
+    
+    const speed = BASE_SPEED * speedMultiplier;
 
         if (scenario === "fade") {
             applyFadeEffect(ship, app, dim, scenario);
@@ -1760,6 +1770,16 @@ export default function GameTestPage() {
     function advanceToNextPhase() {
         const nextPhase = currentPhase + 1;
         const currentPhaseConfig = GAME_PHASES[currentPhase];
+
+         // ✅ AUTO-SAVE BEFORE PHASE ADVANCE
+    const username = sessionStorage.getItem("pua_username");
+    if (username) {
+        const scoresJson = localStorage.getItem("pua_scores");
+        const scores = scoresJson ? JSON.parse(scoresJson) : {};
+        // Update with current score state
+        scores[username] = score; // Use the current React state
+        localStorage.setItem("pua_scores", JSON.stringify(scores));
+    }
 
         if (GAME_PHASES[nextPhase]) {
             // Clear all ships before advancing

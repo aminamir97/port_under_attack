@@ -503,7 +503,10 @@ export default function GameTestPage() {
 
         const ship = new Sprite(shipTexture);
         ship.anchor.set(0.5);
-        ship.scale.set(0.5);
+        const isMobile = dimensions.width < 640;
+
+         const shipScale = isMobile ? 0.35 : 0.5; // Smaller on mobile
+        ship.scale.set(shipScale);
         ship.x = dimensions.width + 100;
         const id = "id" + Math.random().toString(16).slice(2);
         const shipHeight = shipTexture.height * 0.5;
@@ -538,17 +541,21 @@ export default function GameTestPage() {
     // 🧱 Ship animation
     function animateShip(ship, app, dim, scenario = "ghost") {
        // Dynamic speed based on current phase
+           // ✅ RESPONSIVE BASE SPEED
+    const isMobile = dimensions.width < 640;
+    const baseSpeed = isMobile ? 0.30 : 0.50; // Slower on mobile (easier to tap)
     let speedMultiplier = 1.0;
     
-    if (currentPhase >= 3 && currentPhase <= 5) {
-        speedMultiplier = 1.3; // Mixed Ops I & II - 30% faster
+     if (currentPhase >= 3 && currentPhase <= 5) {
+        speedMultiplier = isMobile ? 1.1 : 1.3; // Slightly slower multiplier on mobile
     } else if (currentPhase >= 7 && currentPhase <= 9) {
-        speedMultiplier = 1.5; // Mixed Ops III & IV - 50% faster
+        speedMultiplier = isMobile ? 1.3 : 1.5; // 30% faster on mobile instead of 50%
     } else if (currentPhase >= 11) {
-        speedMultiplier = 1.7; // Mixed Ops V & Endless - 70% faster
+        speedMultiplier = isMobile ? 1.5 : 1.7; // 50% faster on mobile instead of 70%
     }
     
-    const speed = BASE_SPEED * speedMultiplier;
+    
+    const speed = baseSpeed * speedMultiplier;
 
         if (scenario === "fade") {
             applyFadeEffect(ship, app, dim, scenario);

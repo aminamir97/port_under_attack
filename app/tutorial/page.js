@@ -22,7 +22,7 @@ export default function TutorialPage() {
             {/* Back button */}
             <div className="absolute top-4 left-4 z-30">
                 <a
-                    href="/"
+                    href="/intro"
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-emerald-500/40 bg-black/50 text-emerald-200 text-sm hover:bg-emerald-500/10 transition-colors"
                 >
                     ← Back

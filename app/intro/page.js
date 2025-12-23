@@ -111,10 +111,18 @@ export default function IntroPage() {
 
             <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
                 <div className="w-full max-w-4xl border border-emerald-500/25 bg-black/55 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-emerald-200 mb-4">
-                        <span className="px-2 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/10">Port Defense Brief</span>
-                        <span className="px-2 py-1 rounded-full border border-amber-400/40 bg-amber-500/10 text-amber-200">Army Ops</span>
-                        <span className="px-2 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/10">GNSS Cyber</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] uppercase tracking-[0.28em] text-emerald-200 mb-4">
+                        <img
+                            src="/images/logoNoText.png"
+                            alt="Logo"
+                            className="h-12 sm:h-16 lg:h-20 w-auto object-contain opacity-100"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="px-2 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/10">Port Defense Brief</span>
+                            <span className="px-2 py-1 rounded-full border border-amber-400/40 bg-amber-500/10 text-amber-200">Army Ops</span>
+                            <span className="px-2 py-1 rounded-full border border-emerald-400/40 bg-emerald-500/10">GNSS Cyber</span>
+                        </div>
+
                     </div>
 
                     <div className="flex flex-col gap-3 mb-6">
@@ -191,7 +199,7 @@ export default function IntroPage() {
                         </div>
 
                         {/* Right: status card */}
-                        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-900/20 via-black to-black p-5 shadow-xl shadow-emerald-500/15">
+                        {/* <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-900/20 via-black to-black p-5 shadow-xl shadow-emerald-500/15">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="text-[11px] uppercase tracking-[0.22em] text-emerald-200">Mission Status</div>
                                 <span className="px-2 py-1 rounded-full text-[11px] bg-amber-500/15 text-amber-200 border border-amber-400/40">
@@ -219,7 +227,7 @@ export default function IntroPage() {
                             <div className="mt-3 text-xs text-gray-400">
                                 Brief: Identify spoofing/jamming patterns, classify the vessel, authorize intercept.
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </main>

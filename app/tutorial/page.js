@@ -50,7 +50,7 @@ export default function TutorialPage() {
                         </div>
 
                         {/* Enemy vessel card */}
-                        <div className="border border-red-500/30 bg-black/50 rounded-2xl p-4 shadow-2xl shadow-red-500/15 flex flex-col gap-3">
+                        {/* <div className="border border-red-500/30 bg-black/50 rounded-2xl p-4 shadow-2xl shadow-red-500/15 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] uppercase tracking-[0.25em] text-red-300">Enemy Vessel</span>
                                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-200 border border-red-400/30">
@@ -62,6 +62,55 @@ export default function TutorialPage() {
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 text-[11px] text-gray-200">
                                     Spoofing / Jamming-equipped ship approaching port
                                 </div>
+                            </div>
+                        </div> */}
+                        {/* Game Objects Showcase - Port vs Enemy */}
+                        <div className="border border-emerald-500/30 bg-gradient-to-b from-black/50 via-emerald-900/10 to-black/50 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-emerald-500/15">
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-6 sm:gap-0">
+
+                                {/* LEFT: FRIENDLY PORT */}
+                                <div className="text-center sm:text-right flex-shrink-0">
+                                    <div className="mb-4 flex justify-center sm:justify-end">
+                                        <img
+                                            src="/images/gameplay/port_custom.png"
+                                            alt="Port Defense Installation"
+                                            className="sm:h-40 w-48 lg:w-60 sm:w-64 object-contain mx-auto sm:mx-0 drop-shadow-[0_0_25px_rgba(16,185,129,0.5)] rotate-270"
+                                        />
+                                    </div>
+                                    <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-emerald-300 font-bold mb-2">Your Base</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-400">Port Under Attack</p>
+                                </div>
+
+                                {/* CENTER: VS ICON */}
+                                <div className="flex flex-col items-center justify-center gap-4 flex-shrink-0">
+                                    <div className="text-4xl sm:text-5xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(220,38,38,0.6)]">
+                                        🛡️⚡
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300 font-bold">INCOMING THREAT</p>
+                                        <p className="text-[9px] text-gray-400 mt-1">IDENTIFY & INTERCEPT</p>
+                                    </div>
+                                </div>
+
+                                {/* RIGHT: ENEMY VESSEL */}
+                                <div className="text-center sm:text-left flex-shrink-0">
+                                    <div className="mb-4 flex justify-center sm:justify-start">
+                                        <img
+                                            src="/images/gameplay/cargo.png"
+                                            alt="Enemy Vessel"
+                                            className="h-32 sm:h-40 w-auto object-contain drop-shadow-[0_0_25px_rgba(220,38,38,0.5)]"
+                                        />
+                                    </div>
+                                    <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-red-300 font-bold mb-2">Enemy Attack</p>
+                                    <p className="text-[11px] sm:text-xs text-gray-400">GPS Spoofed/Jammed Vessel</p>
+                                </div>
+                            </div>
+
+                            {/* Bottom Action */}
+                            <div className="mt-6 pt-6 border-t border-emerald-500/20 text-center">
+                                <p className="text-xs uppercase tracking-[0.25em] text-emerald-200 font-semibold">
+                                    🎯 Spot the anomaly before impact
+                                </p>
                             </div>
                         </div>
                     </div>

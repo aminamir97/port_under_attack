@@ -220,73 +220,73 @@ const GAME_PHASES = {
         name: "Basic Training",
         scenarios: ["basic"],
         waveSize: 5,           // ← NEW: Total ships in this wave
-        target: { basic: 5 }
+        target: { basic: 1 }
     },
     2: {
         name: "Fade Introduction",
         scenarios: ["fade"],
         waveSize: 3,
-        target: { fade: 3 }
+        target: { fade: 1 }
     },
     3: {
         name: "Mixed Ops I",
         scenarios: ["basic", "fade"],
         waveSize: 3,
-        target: { total: 3 }
+        target: { total: 1 }
     },
     4: {
         name: "Jump Introduction",
         scenarios: ["jump"],
         waveSize: 3,
-        target: { jump: 3 }
+        target: { jump: 1 }
     },
     5: {
         name: "Mixed Ops II",
         scenarios: ["basic", "fade", "jump"],
         waveSize: 3,
-        target: { total: 3 }
+        target: { total: 1 }
     },
     6: {
         name: "Ghost Introduction",
         scenarios: ["ghost"],
         waveSize: 3,
-        target: { ghost: 3 }
+        target: { ghost: 1 }
     },
     7: {
         name: "Mixed Ops III",
         scenarios: ["basic", "fade", "jump", "ghost"],
         waveSize: 3,
-        target: { total: 3 }
+        target: { total: 1 }
     },
     8: {
         name: "Slow Introduction",
         scenarios: ["slow"],
         waveSize: 3,
-        target: { slow: 3 }
+        target: { slow: 1 }
     },
     9: {
         name: "Mixed Ops IV",
         scenarios: ["basic", "fade", "jump", "ghost", "slow"],
         waveSize: 3,
-        target: { total: 3 }
+        target: { total: 1 }
     },
     10: {
         name: "Blackout Introduction",
         scenarios: ["blackout"],
         waveSize: 3,
-        target: { blackout: 3 }
+        target: { blackout: 1 }
     },
     11: {
         name: "Mixed Ops V",
         scenarios: ["basic", "fade", "jump", "ghost", "slow", "blackout"],
         waveSize: 3,
-        target: { total: 3 }
+        target: { total: 1 }
     },
     12: {
         name: "SNR Introduction",
         scenarios: ["snr"],
         waveSize: 3,
-        target: { snr: 3 }
+        target: { snr: 1 }
     },
     13: {
         name: "Endless Mode",
@@ -482,9 +482,9 @@ export default function GameTestPage() {
         SEA_WIDTH = dim.width - portWidth;
 
         const port = new TilingSprite({ texture: portTexture, width: portWidth, height: dim.height });
-        port.x = 0; 
+        port.x = 0;
         port.y = 0;
-         // Scale your custom port tile to look sharp
+        // Scale your custom port tile to look sharp
         port.tileScale.set(0.15); // or 0.5 depending on your image
         scene.addChild(port);
 
@@ -505,7 +505,7 @@ export default function GameTestPage() {
         ship.anchor.set(0.5);
         const isMobile = dimensions.width < 640;
 
-         const shipScale = isMobile ? 0.35 : 0.5; // Smaller on mobile
+        const shipScale = isMobile ? 0.35 : 0.5; // Smaller on mobile
         ship.scale.set(shipScale);
         ship.x = dimensions.width + 100;
         const id = "id" + Math.random().toString(16).slice(2);
@@ -540,22 +540,22 @@ export default function GameTestPage() {
 
     // 🧱 Ship animation
     function animateShip(ship, app, dim, scenario = "ghost") {
-       // Dynamic speed based on current phase
-           // ✅ RESPONSIVE BASE SPEED
-    const isMobile = dimensions.width < 640;
-    const baseSpeed = isMobile ? 0.30 : 0.50; // Slower on mobile (easier to tap)
-    let speedMultiplier = 1.0;
-    
-     if (currentPhase >= 3 && currentPhase <= 5) {
-        speedMultiplier = isMobile ? 1.1 : 1.3; // Slightly slower multiplier on mobile
-    } else if (currentPhase >= 7 && currentPhase <= 9) {
-        speedMultiplier = isMobile ? 1.3 : 1.5; // 30% faster on mobile instead of 50%
-    } else if (currentPhase >= 11) {
-        speedMultiplier = isMobile ? 1.5 : 1.7; // 50% faster on mobile instead of 70%
-    }
-    
-    
-    const speed = baseSpeed * speedMultiplier;
+        // Dynamic speed based on current phase
+        // ✅ RESPONSIVE BASE SPEED
+        const isMobile = dimensions.width < 640;
+        const baseSpeed = isMobile ? 0.30 : 0.50; // Slower on mobile (easier to tap)
+        let speedMultiplier = 1.0;
+
+        if (currentPhase >= 3 && currentPhase <= 5) {
+            speedMultiplier = isMobile ? 1.1 : 1.3; // Slightly slower multiplier on mobile
+        } else if (currentPhase >= 7 && currentPhase <= 9) {
+            speedMultiplier = isMobile ? 1.3 : 1.5; // 30% faster on mobile instead of 50%
+        } else if (currentPhase >= 11) {
+            speedMultiplier = isMobile ? 1.5 : 1.7; // 50% faster on mobile instead of 70%
+        }
+
+
+        const speed = baseSpeed * speedMultiplier;
 
         if (scenario === "fade") {
             applyFadeEffect(ship, app, dim, scenario);
@@ -869,15 +869,6 @@ export default function GameTestPage() {
                     shipsActive: waveStateRef.current.shipsActive - 1
                 });
 
-                // // Example: In your ship scenarios
-                // fireRocketStrike(ship, app, dim, () => {
-                //     setScore(prevScore => Math.max(0, prevScore - 20));
-                //     setScoreChange(-20);
-                //     setTimeout(() => setScoreChange(null), 1500);
-
-                //     ship.destroy();
-                //     console.log('🎆 Ship destroyed by rocket strike!');
-                // });
 
                 explodeShip(ship, app, dim, () => {
                     setScore(prevScore => Math.max(0, prevScore - 20));
@@ -885,14 +876,6 @@ export default function GameTestPage() {
                     setTimeout(() => setScoreChange(null), 1500);
 
                     ship.destroy();
-
-
-
-                    // // ← NEW: Decrease active ships count, NO respawn
-                    // updateWaveState({
-                    //     shipsActive: waveStateRef.current.shipsActive - 1,
-                    //     shipsSpawned: waveStateRef.current.shipsSpawned - 1
-                    // });
 
                     console.log(`🔍 AFTER UPDATE: shipsSpawned=${waveStateRef.current.shipsSpawned}, shipsActive=${waveStateRef.current.shipsActive}`);
                     console.log(`💥 Ship (${ship.label}) hit port.`);
@@ -1778,15 +1761,15 @@ export default function GameTestPage() {
         const nextPhase = currentPhase + 1;
         const currentPhaseConfig = GAME_PHASES[currentPhase];
 
-         // ✅ AUTO-SAVE BEFORE PHASE ADVANCE
-    const username = sessionStorage.getItem("pua_username");
-    if (username) {
-        const scoresJson = localStorage.getItem("pua_scores");
-        const scores = scoresJson ? JSON.parse(scoresJson) : {};
-        // Update with current score state
-        scores[username] = score; // Use the current React state
-        localStorage.setItem("pua_scores", JSON.stringify(scores));
-    }
+        // ✅ AUTO-SAVE BEFORE PHASE ADVANCE
+        const username = sessionStorage.getItem("pua_username");
+        if (username) {
+            const scoresJson = localStorage.getItem("pua_scores");
+            const scores = scoresJson ? JSON.parse(scoresJson) : {};
+            // Update with current score state
+            scores[username] = score; // Use the current React state
+            localStorage.setItem("pua_scores", JSON.stringify(scores));
+        }
 
         if (GAME_PHASES[nextPhase]) {
             // Clear all ships before advancing
@@ -1813,6 +1796,8 @@ export default function GameTestPage() {
                         toast.success(`🎓 New learning card unlocked: "${cardToUnlock.title}"!`);
                         console.log(`🎓 Learning card "${cardToUnlock.title}" unlocked!`);
                     }
+                } else {
+                    console.log(`ℹ️ Learning card for ${scenario} already unlocked.`);
                 }
 
                 console.log(`✅ ${scenario} marked as learned after completing 3 solves`);
@@ -1876,12 +1861,13 @@ export default function GameTestPage() {
             waveComplete: false
         });
 
-        await showEmergencyWaveAlert();
 
 
         toast(`🌊 Wave ${currentPhase}: ${phase.name}`, { icon: '⚓' });
         addEventLog(`Wave ${currentPhase} initiated: Need to solve ${targetToSolve} ships`, "🌊");
         await delay(4000); // Brief pause before spawning
+        await showEmergencyWaveAlert();
+
         spawnNextShipInWave();
     }
 
@@ -2033,39 +2019,39 @@ export default function GameTestPage() {
     // 🧱 Layout UI
     return (
         <>
-       
-        <div className="flex flex-col h-screen bg-slate-900" data-wave-alert style={{ animation: 'none' }}>
-            {/* 🧭 Gaming HUD Toolbar */}
-            <GameToolbar
-                waveAlertActive={waveAlertActive}
-                score={score}
-                time={formatTime(gameTime)} // 👈 Change this line
-                scoreChange={scoreChange}
-                unreadEventLogs={unreadEventLogs} // 👈 ADD THIS
-                onMenuToggle={() => {
-                    const newMenuState = !menuOpen;
-                    setMenuOpen(newMenuState);
-                    if (newMenuState) {
-                        handlePause();
-                        setUnreadEventLogs(0); // 👈 ADD THIS - Reset when menu opens
-                    } else {
-                        handleResume();
-                    }
-                }}
-            />
 
-            {/* 🎮 Game Container */}
-            <div ref={containerRef} className="flex-1 relative" />
+            <div className="flex flex-col h-screen bg-slate-900" data-wave-alert style={{ animation: 'none' }}>
+                {/* 🧭 Gaming HUD Toolbar */}
+                <GameToolbar
+                    waveAlertActive={waveAlertActive}
+                    score={score}
+                    time={formatTime(gameTime)} // 👈 Change this line
+                    scoreChange={scoreChange}
+                    unreadEventLogs={unreadEventLogs} // 👈 ADD THIS
+                    onMenuToggle={() => {
+                        const newMenuState = !menuOpen;
+                        setMenuOpen(newMenuState);
+                        if (newMenuState) {
+                            handlePause();
+                            setUnreadEventLogs(0); // 👈 ADD THIS - Reset when menu opens
+                        } else {
+                            handleResume();
+                        }
+                    }}
+                />
 
-              {/* Bottom Toolbar with Game Controls */}
-            <BottomToolbar
-                isPaused={isPaused}
-                onPause={handlePause}
-                onResume={handleResume}
-                onExit={handleExit}
-            />
+                {/* 🎮 Game Container */}
+                <div ref={containerRef} className="flex-1 relative" />
+
+                {/* Bottom Toolbar with Game Controls */}
+                <BottomToolbar
+                    isPaused={isPaused}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onExit={handleExit}
+                />
             </div>
-          
+
 
             {/* Side Menu Component */}
             <SideMenu
@@ -2077,7 +2063,7 @@ export default function GameTestPage() {
                 eventLogs={eventLogs}
                 learningCards={learningCards}
             />
-       
+
             <LearningModalInteractive
                 isOpen={showLevelModal}
                 scenarioData={currentLevel?.modalInfo}
@@ -2099,72 +2085,10 @@ export default function GameTestPage() {
                 }}
             />
 
-          
-        
-         </>
+
+
+        </>
     );
 }
 
 
-/* meeting notes for the gameplay:
-there will be new type of ship which is the easy enemy ship, one click and select bomb option to destroy it.
-
-1. normal ships are coming with no issues and the player can click on them to get info and destroy them easily.
-2. then we introduce first issue (fade) and the normal ships,
-3. until the player learn it, then there will be normal ships and the same fade issue ship but now the player know about it for sometime (ex. bomb 3 of them).
-4. then we introduce the jump issue with noraml ships and no fade issue until user learn it,
-5. then we have normal ships, fade issue ships (learned) and jump issue ships (learned) for sometime, 
-6. then we introduce slow issue with normal ships only,until they user learn it,
-7. then we have normal ships, fade issue ships (learned) and jump issue ships (learned) and third issue ships (learned) for sometime, 
-8. then we introduce ghost issue with normal ships only, until they user learn it,
-9. then we have normal ships, fade issue ships (learned) and jump issue ships (learned) and third issue ships (learned) and ghost issue ships (learned) for sometime, 
-10.then we introduce blackout issue with normal ships only, until they user learn it,
-11. then we have normal ships, fade issue ships (learned) and jump issue ships (learned) and third issue ships (learned) and ghost issue ships (learned) and blackout issue ships (learned) for sometime, 
-12. then we introduce SNR issue with normal ships only, until they user learn it,
-13. then we have normal ships, fade issue ships (learned) and jump issue ships (learned) and third issue ships (learned) and ghost issue ships (learned) and blackout issue ships (learned) and SNR issue ships (learned) for sometime, 
-14. finally we have all types of ships with all issues (all learned) for the final phase.
-15 when user get specefic score we increase the speed, 
-
-
-
-
-*/
-
-  {/* Phase Progress Display */}
-            // <div className="fixed top-20 left-4 z-40 bg-slate-800/90 backdrop-blur-sm border border-slate-600 rounded-lg p-4 shadow-lg">
-            //     <div className="text-cyan-400 font-bold text-sm mb-2">
-            //         Phase {currentPhase}: {GAME_PHASES[currentPhase]?.name}
-            //     </div>
-
-            //     {currentPhase !== 13 && (
-            //         <div className="text-amber-400 text-xs mb-2">
-            //             Target: {waveState.shipsSolved}/{waveState.totalShipsToSolve} solved
-            //         </div>
-            //     )}
-
-            //     {/* Active Ships */}
-            //     <div className="text-slate-300 text-xs mb-2">
-            //         Active: {waveState.shipsActive} 🚢
-            //     </div>
-            //     {/* Destroyed Counts */}
-            //     <div className="text-slate-300 text-xs space-y-1">
-            //         {Object.entries(destroyedCounts).map(([key, count]) =>
-            //             key !== 'total' && count > 0 && (
-            //                 <div key={key}>
-            //                     {key}: {count}
-            //                 </div>
-            //             )
-            //         )}
-            //         <div className="border-t border-slate-600 pt-1 mt-1 font-semibold">
-            //             Total Destroyed: {destroyedCounts.total}
-            //         </div>
-            //     </div>
-
-            //     {/* Phase Target */}
-            //     {GAME_PHASES[currentPhase]?.target && (
-            //         <div className="text-green-400 text-xs mt-2 border-t border-slate-600 pt-2">
-            //             Target: {JSON.stringify(GAME_PHASES[currentPhase].target)}
-            //         </div>
-            //     )}
-            
-            // </div>

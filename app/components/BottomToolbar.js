@@ -6,6 +6,12 @@ export default function BottomToolbar({
     onResume,
     onExit
 }) {
+
+
+    function restartClicked() {
+        // Reload the current page to restart the game
+        window.location.reload();
+    }
     return (
         <div className="h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-t-2 border-amber-600/50 
                         flex items-center justify-between px-4 md:px-6 shadow-[0_-4px_20px_rgba(217,119,6,0.3)]">
@@ -69,6 +75,7 @@ export default function BottomToolbar({
                                border border-slate-500/50 md:border-2 hover:border-slate-400
                                rounded-lg shadow-lg hover:shadow-slate-500/50
                                transition-all duration-200 transform hover:scale-105"
+                    onClick={restartClicked}
                 >
                     <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -50,428 +50,220 @@ export default function LearningModalInteractive({
 
     // ============== SCENARIO-SPECIFIC DIALOGUE DATA ==============
 
-    // const dialogueData = {
-    //     fade: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR CONTACT: Vessel approaching from sector 7. Signal acquisition unstable. Watch the radar closely—the target's position keeps fading in and out.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Do you observe the ship appearing and disappearing on the radar in a repetitive pattern?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. That's typical of signal spoofing. The attacker is modulating false signals.",
-    //             hintWrong: "Reconsider. Look at the ship's visibility—does it flicker? This is a fade pattern.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Does the fade happen at regular intervals, or randomly?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Good observation. Periodic fading suggests deliberate modulation, not natural interference.",
-    //             hintWrong: "The pattern is actually quite regular. Signal spoofing often uses predictable cycles.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Could this be caused by low signal power or weak transmission (SNR issue), or deliberate spoofing?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. Weak signal spoofing—the attacker is broadcasting false GNSS signals at low power.",
-    //             hintWrong: "Think about what we know: intermittent signal loss. That's spoofing, not natural fading.",
-    //         },
-    //         summary:
-    //             "SUMMARY: The vessel exhibits intermittent signal fading in a periodic pattern. This matches weak signal spoofing attack behavior—the enemy is transmitting false GNSS signals that cause the receiver to lose and reacquire lock repeatedly.",
-    //     },
-
-    //     jump: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR ALERT: Hostile vessel detected. WARNING—Position data is unstable. The target's location keeps shifting abruptly across the display.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Does the ship's position jump to a completely different location on the map, rather than moving smoothly?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Confirmed. Those sudden jumps are a signature of coordinated spoofing.",
-    //             hintWrong: "Look again. The target isn't moving gradually—it's teleporting across the radar.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Do the jumps occur repeatedly, or just once?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Good. Repeated jumps indicate the attacker is continuously transmitting false position data.",
-    //             hintWrong: "This is continuous. The enemy is actively spoofing the vessel's location.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Could this be a faulty receiver, or is it coordinated false GNSS signals overriding the real position?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. Position jump spoofing—multiple false signal sets causing rapid pseudorange shifts.",
-    //             hintWrong: "Not a hardware fault. This is deliberate signal spoofing causing impossible position discontinuities.",
-    //         },
-    //         summary:
-    //             "SUMMARY: The vessel exhibits sudden, repeated position jumps across the tactical display. This is a coordinated position-jump spoofing attack—the enemy transmits false GNSS signals that cause rapid, impossible location shifts.",
-    //     },
-
-    //     slow: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR TRACKING: Enemy vessel locked. Unusual behavior detected—the target is moving erratically, drifting away from its course at a slow but consistent rate.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Is the ship moving smoothly toward the port, but gradually drifting off course sideways?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. That drift is not natural wind or current—it's deliberate signal manipulation.",
-    //             hintWrong: "Watch the trajectory. The ship is being pulled off its intended path gradually.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Is the drift slow and barely noticeable at first, making it hard to detect?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Good catch. Subtle, long-term drift is a meaconing or replay attack signature.",
-    //             hintWrong: "Actually, the drift is quite subtle. That's the danger—it's easy to miss.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Does the ship seem to be receiving a false GNSS signal slightly stronger than the real one?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. Slow drift—the attacker is broadcasting a counterfeit signal that quietly redirects the vessel.",
-    //             hintWrong: "That's the mechanism. The enemy's false signal is overriding the authentic one, pulling the target off course.",
-    //         },
-    //         summary:
-    //             "SUMMARY: The vessel is drifting gradually and subtly from its intended course. This is a meaconing or replay attack—the enemy broadcasts a false GNSS signal slightly stronger than the real one, slowly pulling the ship off course.",
-    //     },
-
-    //     ghost: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR CONTACT: Target acquired. Wait—multiple positions detected in the same area. We're seeing echoes or phantom contacts around the main contact.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Do you see multiple false ship positions clustered around the real target on the radar?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Confirmed. Those are ghost ships—false GNSS solutions created by spoofing.",
-    //             hintWrong: "Look at the display. There are extra contacts—phantom vessels nearby.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Are these ghost positions stable, or do they shift and change?",
-    //             correctAnswer: true,
-    //             hintCorrect: "They're unstable because the spoofing transmitter is creating multiple false solutions simultaneously.",
-    //             hintWrong: "Actually, they're shifting. The attacker is generating multiple spoofed signal sets.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Could these phantom ships be caused by the receiver locking onto multiple false GNSS signals at once?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. Ghost ship spoofing—the attacker broadcasts coordinated false signals, creating multiple phantom positions.",
-    //             hintWrong: "That's the mechanism. The receiver can't distinguish real from false, so it computes multiple solutions.",
-    //         },
-    //         summary:
-    //             "SUMMARY: Multiple phantom ship positions appear simultaneously around the real vessel. This is a ghost ship spoofing attack—the enemy transmits multiple coordinated false GNSS signals, causing the receiver to generate multiple fictitious position solutions.",
-    //     },
-
-    //     blackout: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR CONTACT LOST: Vessel was tracked, now signal is GONE. Complete loss of GNSS acquisition. We have zero position data—the target has gone dark.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Did the radar signal drop completely and suddenly, with no gradual weakening first?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Confirmed. That's not signal fading—it's complete jamming.",
-    //             hintWrong: "Look at the pattern. The signal disappeared all at once.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Is the loss total across all frequencies and channels, not just one band?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. Wideband jamming. The attacker is using high-power interference on all GNSS frequencies.",
-    //             hintWrong: "Actually, it's affecting all channels. That's a sign of broadband jamming.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Is this caused by a powerful jammer transmitting high-power noise to overwhelm all satellite signals?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. Complete blackout jamming—a denial-of-service attack using RF interference.",
-    //             hintWrong: "That's the mechanism. The jammer is transmitting so much power that real signals can't get through.",
-    //         },
-    //         summary:
-    //             "SUMMARY: Complete loss of GNSS signal across all frequencies. This is a blackout jamming attack—the enemy transmits high-power radio frequency interference that overwhelms legitimate satellite signals, causing a total denial-of-service.",
-    //     },
-
-    //     snr: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR TRACKING: Vessel locked. Signal quality degrading. Notice the signal bar dropping—the carrier-to-noise ratio is getting worse. Could be jamming or spoofing in the early stage.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Is the signal strength gradually decreasing over time, but not dropping to zero?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Good observation. Gradual SNR drop indicates low-power interference or spoofing.",
-    //             hintWrong: "Watch the signal bar. It's slowly degrading.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Does the signal strength fluctuate up and down erratically, rather than staying stable?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. Fluctuating SNR is a sign of active signal manipulation.",
-    //             hintWrong: "Actually, it's unstable. The signal is wobbling, not steady.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Could this be early-stage jamming or spoofing—where the attacker is testing defenses?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. SNR drop attack—deliberate signal degradation, possibly reconnaissance before a larger assault.",
-    //             hintWrong: "That's likely. SNR attacks are reconnaissance tools—the enemy probes our defenses.",
-    //         },
-    //         summary:
-    //             "SUMMARY: The vessel's signal-to-noise ratio (SNR) is degrading gradually with fluctuations. This is an SNR drop attack—the attacker is deliberately reducing signal quality through low-power jamming or early-stage spoofing, possibly to test or probe port defenses.",
-    //     },
-
-    //     basic: {
-    //         intro: {
-    //             officer: "Intelligence Officer (HQ)",
-    //             line: "RADAR CONTACT: Unidentified vessel approaching port. No anomalies detected in GNSS signal. Clean, stable position data. This is a straightforward threat.",
-    //         },
-    //         q1: {
-    //             officer: "Officer",
-    //             question: "Is the ship approaching with a stable, normal GNSS signal and no interference?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Confirmed. No signal spoofing or jamming—just a direct threat.",
-    //             hintWrong: "The signal looks normal to me. No anomalies.",
-    //         },
-    //         q2: {
-    //             officer: "Officer",
-    //             question: "Does the position data update smoothly without jumps, fades, or delays?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Correct. Smooth, predictable movement. This is a conventional attack, not spoofed.",
-    //             hintWrong: "Actually, the data is consistent and regular.",
-    //         },
-    //         q3: {
-    //             officer: "Officer",
-    //             question: "Is this a direct, unspoofed threat that should be engaged immediately?",
-    //             correctAnswer: true,
-    //             hintCorrect: "Exactly. Basic threat—no spoofing or jamming. Engage defensive measures.",
-    //             hintWrong: "Affirmative. This is a straightforward hostile contact.",
-    //         },
-    //         summary:
-    //             "SUMMARY: The vessel is approaching with a clean, unmanipulated GNSS signal. This is a basic direct threat—no spoofing, no jamming. Standard defensive engagement protocols apply.",
-    //     },
-    // };
     const dialogueData = {
         fade: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR CONTACT: Vessel approaching from sector 7. Signal acquisition unstable. Watch the radar—the target's position keeps fading in and out.",
+                line: "TRACK ALERT: Vessel detected. The ship appears, disappears, then appears again on the screen.",
             },
             q1: {
                 officer: "Officer",
-                question: "Do you observe the ship appearing and disappearing on the radar in a repetitive pattern?",
+                question: "Does the ship reappear after disappearing?",
                 correctAnswer: true,
-                hintCorrect: "Correct. That's typical of signal fading due to low SNR jamming.",
-                hintWrong: "Reconsider. Look at the ship's visibility—it flickers in a fade pattern.",
+                hintCorrect: "Correct. The signal is lost and recovered repeatedly.",
+                hintWrong: "Observe again. The ship comes back after disappearing.",
             },
             q2: {
                 officer: "Officer",
-                question: "Does the fade occur at regular intervals or randomly?",
-                correctAnswer: true,
-                hintCorrect: "Good observation. Regular fading suggests deliberate interference, not natural signal loss.",
-                hintWrong: "The pattern is actually quite regular. Signal fading is often induced by controlled jamming.",
+                question: "Is the ship visible continuously without interruption?",
+                correctAnswer: false,
+                hintCorrect: "Correct. The visibility is not continuous.",
+                hintWrong: "The ship is not always visible.",
             },
             q3: {
                 officer: "Officer",
-                question: "Could this be caused by low signal power or deliberate jamming?",
+                question: "Does this behavior match reduced GNSS signal strength?",
                 correctAnswer: true,
-                hintCorrect: "Exactly. Low-power jamming—the attacker is weakening the GNSS signal intermittently.",
-                hintWrong: "Think about the intermittent loss. This is due to jamming, not natural fading.",
+                hintCorrect: "Exactly. Weak interference lowers signal quality and causes fading.",
+                hintWrong: "Fading usually happens when signal strength is reduced.",
             },
             summary:
-                "SUMMARY: The vessel exhibits intermittent fading on the radar. This matches low SNR jamming behavior—the enemy is transmitting weak interference that causes the GNSS receiver to lose and reacquire lock repeatedly.",
+                "SUMMARY: The ship repeatedly appears and disappears. This indicates low-power GNSS jamming, where interference reduces signal quality and causes intermittent position loss.",
         },
 
         jump: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR ALERT: Hostile vessel detected. Position data is unstable—the target keeps jumping abruptly across the display.",
+                line: "TRACK WARNING: The ship suddenly changes position on the display.",
             },
             q1: {
                 officer: "Officer",
-                question: "Does the ship jump to completely different locations rather than moving smoothly?",
-                correctAnswer: true,
-                hintCorrect: "Confirmed. Sudden jumps are a signature of coordinated spoofing.",
-                hintWrong: "Look again. The target isn't moving gradually—it teleports across the radar.",
+                question: "Does the ship move smoothly across the screen?",
+                correctAnswer: false,
+                hintCorrect: "Correct. The movement is sudden, not smooth.",
+                hintWrong: "The ship jumps instead of moving normally.",
             },
             q2: {
                 officer: "Officer",
-                question: "Do the jumps happen repeatedly?",
+                question: "Does the ship appear far from its previous position instantly?",
                 correctAnswer: true,
-                hintCorrect: "Good. Repeated jumps indicate the attacker is continuously transmitting false position data.",
-                hintWrong: "This is continuous. The enemy is actively spoofing the vessel's location.",
+                hintCorrect: "Correct. The position changes abruptly.",
+                hintWrong: "The change happens instantly, not gradually.",
             },
             q3: {
                 officer: "Officer",
-                question: "Could this be a faulty receiver, or is it deliberate spoofing?",
+                question: "Does this behavior indicate false position information?",
                 correctAnswer: true,
-                hintCorrect: "Correct. Position jump spoofing—false signals cause rapid pseudorange shifts.",
-                hintWrong: "Not a hardware fault. This is deliberate signal spoofing causing impossible location discontinuities.",
+                hintCorrect: "Exactly. False GNSS data causes position jumps.",
+                hintWrong: "Normal navigation cannot create sudden jumps.",
             },
             summary:
-                "SUMMARY: The vessel exhibits sudden, repeated position jumps. This is a coordinated position-jump spoofing attack—the enemy transmits false GNSS signals that cause rapid, impossible location shifts.",
+                "SUMMARY: The ship suddenly jumps between positions. This is GNSS spoofing, where false signals force the receiver to calculate incorrect positions.",
         },
 
         slow: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR TRACKING: Enemy vessel locked. Target is moving erratically, drifting from its course at a slow but steady rate.",
+                line: "TRACK UPDATE: The ship keeps moving, but its path slowly shifts away from its original direction.",
             },
             q1: {
                 officer: "Officer",
-                question: "Is the ship moving smoothly but gradually drifting sideways?",
+                question: "Does the ship stay close to its expected path at first?",
                 correctAnswer: true,
-                hintCorrect: "Correct. That drift is deliberate signal manipulation.",
-                hintWrong: "Watch the trajectory. The ship is slowly pulled off its intended path.",
+                hintCorrect: "Correct. The deviation starts small.",
+                hintWrong: "At first, the movement looks almost normal.",
             },
             q2: {
                 officer: "Officer",
-                question: "Is the drift subtle and hard to detect at first?",
+                question: "Does the position error increase over time?",
                 correctAnswer: true,
-                hintCorrect: "Good catch. Subtle long-term drift is typical of meaconing or replay attacks.",
-                hintWrong: "The drift is subtle and gradual. That's why it can be missed.",
+                hintCorrect: "Correct. The deviation becomes larger.",
+                hintWrong: "The error grows slowly as time passes.",
             },
             q3: {
                 officer: "Officer",
-                question: "Is the ship receiving a false GNSS signal stronger than the real one?",
+                question: "Is this caused by gradual manipulation of GNSS signals?",
                 correctAnswer: true,
-                hintCorrect: "Exactly. Slow drift—the attacker broadcasts a counterfeit signal overriding the authentic one.",
-                hintWrong: "Correct. The false signal pulls the vessel off course gradually.",
+                hintCorrect: "Exactly. Slow signal manipulation causes drift.",
+                hintWrong: "Natural movement does not cause steady drift.",
             },
             summary:
-                "SUMMARY: The vessel drifts subtly from its course. This is a meaconing/replay attack—the enemy broadcasts a false GNSS signal slightly stronger than the real one, slowly redirecting the ship.",
+                "SUMMARY: The ship slowly drifts away from its true path. This is a spoofing attack that gradually shifts GNSS position over time.",
         },
 
         ghost: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR CONTACT: Multiple positions detected around the target—phantom contacts appear near the main vessel.",
+                line: "SITUATION REPORT: More than one ship position appears around the same area.",
             },
             q1: {
                 officer: "Officer",
-                question: "Do you see multiple false ship positions clustered around the real target?",
+                question: "Do you see more ship positions than expected?",
                 correctAnswer: true,
-                hintCorrect: "Confirmed. Those are ghost ships created by spoofing.",
-                hintWrong: "Look at the display. There are extra contacts—phantom vessels nearby.",
+                hintCorrect: "Correct. There are extra positions.",
+                hintWrong: "Look again. More than one position is visible.",
             },
             q2: {
                 officer: "Officer",
-                question: "Are these ghost positions shifting or unstable?",
-                correctAnswer: true,
-                hintCorrect: "Yes. The spoofing transmitter creates multiple false solutions simultaneously.",
-                hintWrong: "They're actually unstable. The attacker generates multiple spoofed signals.",
+                question: "Do all these positions represent real ships?",
+                correctAnswer: false,
+                hintCorrect: "Correct. Some of these positions are false.",
+                hintWrong: "Not all visible positions are real.",
             },
             q3: {
                 officer: "Officer",
-                question: "Could these phantoms be caused by the receiver locking onto multiple false signals?",
+                question: "Does this indicate false GNSS position creation?",
                 correctAnswer: true,
-                hintCorrect: "Exactly. Ghost ship spoofing—the receiver computes multiple solutions from coordinated false signals.",
-                hintWrong: "Yes, the receiver can’t distinguish real from false, producing multiple positions.",
+                hintCorrect: "Exactly. Spoofing creates fake positions.",
+                hintWrong: "Normal systems do not create extra positions.",
             },
             summary:
-                "SUMMARY: Phantom ship positions appear around the real vessel. This is ghost ship spoofing—the enemy transmits multiple coordinated false GNSS signals causing multiple fictitious positions.",
+                "SUMMARY: Multiple false ship positions are visible. This is ghost ship spoofing, where fake GNSS signals create phantom targets.",
         },
 
         blackout: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR CONTACT LOST: The vessel’s signal is gone. Total GNSS loss—no position data available.",
+                line: "ALERT: The ship’s position has completely disappeared from the screen.",
             },
             q1: {
                 officer: "Officer",
-                question: "Did the radar signal drop completely and suddenly?",
-                correctAnswer: true,
-                hintCorrect: "Confirmed. That's full jamming, not signal fading.",
-                hintWrong: "Look at the pattern. The signal disappeared all at once.",
+                question: "Is the ship position visible at this moment?",
+                correctAnswer: false,
+                hintCorrect: "Correct. No position is available.",
+                hintWrong: "There is no position shown.",
             },
             q2: {
                 officer: "Officer",
-                question: "Is the loss total across all frequencies, not just one band?",
-                correctAnswer: true,
-                hintCorrect: "Correct. Wideband jamming is affecting all GNSS channels.",
-                hintWrong: "Actually, all channels are affected—a sign of broadband jamming.",
+                question: "Does the position return after a short time?",
+                correctAnswer: false,
+                hintCorrect: "Correct. The position does not return.",
+                hintWrong: "The signal stays lost.",
             },
             q3: {
                 officer: "Officer",
-                question: "Is this caused by a high-power jammer overwhelming satellite signals?",
+                question: "Is this caused by strong interference blocking GNSS signals?",
                 correctAnswer: true,
-                hintCorrect: "Exactly. Complete blackout jamming—a total denial-of-service attack.",
-                hintWrong: "Correct. The jammer emits so much power that legitimate signals cannot get through.",
+                hintCorrect: "Exactly. Strong jamming blocks satellite signals.",
+                hintWrong: "This level of loss requires strong interference.",
             },
             summary:
-                "SUMMARY: Complete GNSS signal loss across all frequencies. This is blackout jamming—the enemy uses high-power interference to deny positioning data.",
+                "SUMMARY: The ship position is completely lost. This is high-power GNSS jamming causing total signal blackout.",
         },
 
         snr: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR TRACKING: Vessel locked. Signal quality degrading—the SNR is dropping gradually. Could be early-stage jamming or spoofing.",
+                line: "TRACK STATUS: The ship is visible, but the signal indicator is getting weaker.",
             },
             q1: {
                 officer: "Officer",
-                question: "Is the signal strength gradually decreasing, but not zero?",
+                question: "Is the ship position still available?",
                 correctAnswer: true,
-                hintCorrect: "Good observation. Gradual SNR drop indicates low-power interference or spoofing.",
-                hintWrong: "Watch the signal bar. It's slowly degrading.",
+                hintCorrect: "Correct. Position data is still present.",
+                hintWrong: "The ship is still visible.",
             },
             q2: {
                 officer: "Officer",
-                question: "Does the signal fluctuate up and down rather than staying stable?",
+                question: "Is the signal strength lower than before?",
                 correctAnswer: true,
-                hintCorrect: "Correct. Fluctuating SNR is a sign of active signal manipulation.",
-                hintWrong: "The signal is unstable, not steady.",
+                hintCorrect: "Correct. The signal level is decreasing.",
+                hintWrong: "The signal is weaker than earlier.",
             },
             q3: {
                 officer: "Officer",
-                question: "Could this be early-stage jamming or spoofing testing defenses?",
+                question: "Does reduced signal strength affect position accuracy?",
                 correctAnswer: true,
-                hintCorrect: "Exactly. SNR drop—low-power jamming or preliminary spoofing probing our defenses.",
-                hintWrong: "Correct. SNR attacks are reconnaissance tools, probing port defenses.",
+                hintCorrect: "Exactly. Lower signal quality reduces accuracy.",
+                hintWrong: "Weak signals lead to poor positioning.",
             },
             summary:
-                "SUMMARY: The vessel's SNR is degrading gradually with fluctuations. This is a low-power jamming or early-stage spoofing attack—deliberate signal degradation to probe defenses.",
+                "SUMMARY: Signal strength is decreasing while position remains available. This indicates low-level GNSS jamming that degrades accuracy.",
         },
 
         basic: {
             intro: {
                 officer: "Intelligence Officer (HQ)",
-                line: "RADAR CONTACT: Unidentified vessel approaching. GNSS signal is stable—no anomalies detected.",
+                line: "TRACK CONFIRMED: The ship moves steadily with no signal issues.",
             },
             q1: {
                 officer: "Officer",
-                question: "Is the ship approaching with stable, normal GNSS signal?",
+                question: "Does the ship move smoothly on the screen?",
                 correctAnswer: true,
-                hintCorrect: "Confirmed. No spoofing or jamming—direct threat.",
-                hintWrong: "The signal looks normal. No anomalies.",
+                hintCorrect: "Correct. The movement is normal.",
+                hintWrong: "The movement looks normal.",
             },
             q2: {
                 officer: "Officer",
-                question: "Does the position update smoothly without jumps, fades, or delays?",
+                question: "Is the GNSS signal stable?",
                 correctAnswer: true,
-                hintCorrect: "Correct. Smooth movement—conventional threat.",
-                hintWrong: "The data is consistent and regular.",
+                hintCorrect: "Correct. No instability is visible.",
+                hintWrong: "The signal does not show any issues.",
             },
             q3: {
                 officer: "Officer",
-                question: "Is this a direct, unspoofed threat to engage immediately?",
-                correctAnswer: true,
-                hintCorrect: "Exactly. Basic threat—no jamming or spoofing. Engage defenses.",
-                hintWrong: "Affirmative. This is a straightforward hostile contact.",
+                question: "Is there any sign of GNSS manipulation?",
+                correctAnswer: false,
+                hintCorrect: "Correct. No spoofing or jamming is present.",
+                hintWrong: "There are no abnormal behaviors.",
             },
             summary:
-                "SUMMARY: Vessel is approaching with a stable GNSS signal. This is a basic direct threat—no spoofing, no jamming. Standard defensive protocols apply.",
+                "SUMMARY: The ship shows normal movement and stable GNSS signals. This is a basic threat without GNSS spoofing or jamming.",
         },
     };
+
+
+
 
 
     const currentDialogue = dialogueData[scenarioType] || dialogueData.basic;

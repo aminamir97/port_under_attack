@@ -137,7 +137,7 @@ export default function SideMenu({ isOpen, onClose, eventLogs = [], learningCard
                                 <div className="flex items-center gap-3">
                                     <span className="text-4xl">{selectedCard.icon}</span>
                                     <h2 className="text-2xl font-bold text-[#ff66ff]" style={{ textShadow: "0 0 10px #ff66ff" }}>
-                                        {selectedCard.title}
+                                        {selectedCard.title + " (" + selectedCard.attackType + ")"}
                                     </h2>
                                 </div>
                                 <button

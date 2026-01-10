@@ -132,9 +132,9 @@ export default function IntroPage() {
                         <p className="text-base sm:text-lg text-emerald-100">
                             Defend the harbor against GPS spoofing and jamming. Learn to spot GNSS anomalies, classify threats, and authorize intercepts before the gate is breached.
                         </p>
-                        <p className="text-sm text-gray-300">
+                        {/* <p className="text-sm text-gray-300">
                             This serious game is part of my Master's thesis in Geospatial Technologies (mastergeotech.info), focused on GNSS cybersecurity education.
-                        </p>
+                        </p> */}
                     </div>
 
                     <div className="grid md:grid-cols-[1.1fr,0.9fr] gap-6 items-start">

@@ -55,7 +55,7 @@ const modalsDefault = {
     basic: {
         title: "Basic",
         description: "The ship's signal quality is gradually degrading with fluctuating Signal-to-Noise Ratio. This could indicate low-power jamming or early stages of a spoofing attack testing defenses.",
-        issuesList: ["BOMB NOW"],
+        issuesList: ["BASIC SHIP"],
         correctIssueIndex: 0,
         image: "images/gameplay/cargo.png"
     }
@@ -71,222 +71,187 @@ const gameLevelsDefault = [
     { scenario: "snr", learned: false, modalInfo: modalsDefault.snr }
 ];
 
-// 📚 Static library of all learning cards (one per scenario)
+
 const allLearningCardsLibrary = [
     {
         id: "fade",
         icon: "🌫️",
         title: "Signal Fade",
-        shortDescription: "Intermittent signal fading simulates weak signal spoofing attacks.",
-        fullDescription: "Signal fade attacks involve intermittent manipulation of GNSS signals, causing them to fade in and out. This creates uncertainty in positioning and can mask other spoofing techniques. Attackers use this to test defenses or create confusion before launching more sophisticated attacks.",
-        howItWorks: "The attacker modulates the power of false GNSS signals, causing the receiver to intermittently lose and reacquire satellite lock. This creates a fading pattern that can be mistaken for natural signal degradation.",
+        attackType: "Jamming",
+        shortDescription: "Intermittent loss and recovery of GNSS signal caused by low-level interference.",
+        fullDescription: "Signal fade is characterized by the GNSS position repeatedly appearing and disappearing. This symptom is typically associated with low-power or partial jamming, where interference reduces signal quality without fully blocking reception.",
+        howItWorks: "A jammer emits interference that lowers the signal-to-noise ratio (SNR). When the signal quality drops below the receiver tracking threshold, satellite lock is lost. When interference weakens, tracking resumes, creating a fade-in / fade-out effect.",
         detectionMethods: [
-            "Monitor signal strength patterns for artificial periodicity",
-            "Compare fade patterns across multiple receivers",
-            "Check for correlation with environmental conditions",
-            "Use signal quality monitoring systems"
+            "Observe intermittent availability of GNSS position",
+            "Monitor SNR or C/N₀ drops during fading periods",
+            "Detect repeated loss and reacquisition of satellites",
+            "Compare with environmental conditions to rule out natural causes"
         ],
         countermeasures: [
-            "Implement signal strength anomaly detection",
-            "Use redundant positioning systems",
-            "Deploy advanced signal processing filters",
-            "Maintain receiver diversity"
+            "Monitor GNSS signal quality indicators",
+            "Use multi-frequency GNSS receivers",
+            "Integrate inertial or dead-reckoning sensors",
+            "Apply jamming detection algorithms"
         ]
     },
     {
         id: "jump",
         icon: "🔀",
         title: "Position Jump",
-        shortDescription: "Sudden position discontinuities indicate coordinated spoofing attacks.",
-        fullDescription: "Position jump attacks involve abrupt changes in reported location, often used to test victim response or to rapidly relocate a vessel's perceived position. This is more aggressive than drift spoofing and easier to detect but can cause immediate navigation errors.",
-        howItWorks: "The attacker transmits spoofed signals that suddenly shift the receiver's calculated position by a significant distance. This can be done by rapidly changing the pseudorange measurements or by switching between different spoofing signal sets.",
+        attackType: "Spoofing",
+        shortDescription: "Sudden and unrealistic changes in reported position.",
+        fullDescription: "Position jumps occur when the GNSS receiver suddenly reports a location far from the true position. This symptom is a strong indicator of spoofing, as such changes are physically impossible under normal navigation conditions.",
+        howItWorks: "A spoofer transmits counterfeit GNSS signals with manipulated timing information. This forces the receiver to compute a false position that abruptly shifts to a different location.",
         detectionMethods: [
-            "Monitor for impossible velocity or acceleration values",
-            "Compare position solutions across multiple receivers",
-            "Check consistency with inertial measurement units",
-            "Implement Kalman filtering with outlier rejection"
+            "Detect position changes inconsistent with vessel motion",
+            "Monitor unrealistic speed or acceleration values",
+            "Compare GNSS position with inertial navigation data",
+            "Check consistency across independent receivers"
         ],
         countermeasures: [
-            "Use position solution consistency checks",
-            "Implement secure time and authentication",
-            "Deploy receiver autonomous integrity monitoring (RAIM)",
-            "Maintain redundant positioning sources"
+            "Apply position plausibility and consistency checks",
+            "Use RAIM or integrity monitoring techniques",
+            "Integrate inertial navigation systems",
+            "Use authenticated GNSS services when available"
         ]
     },
     {
         id: "slow",
         icon: "📡",
         title: "Slow Drift",
-        shortDescription: "Gradual position drift caused by meaconing or replay attacks.",
-        fullDescription: "Slow drift attacks gradually shift a vessel's perceived position over time through signal spoofing. This subtle approach is harder to detect than sudden jumps and can lead ships dangerously off course without immediate alarm.",
-        howItWorks: "An attacker broadcasts counterfeit GNSS signals that are slightly stronger than authentic satellite signals. The receiver locks onto these false signals, and the attacker slowly modifies the transmitted position data, causing a gradual 'drift' in the displayed location.",
+        attackType: "Spoofing",
+        shortDescription: "Gradual deviation of reported position over time.",
+        fullDescription: "Slow drift is a subtle spoofing technique where the reported GNSS position gradually moves away from the true location. Because the changes are small and continuous, this attack is difficult to detect and can mislead navigation over long periods.",
+        howItWorks: "The attacker transmits counterfeit GNSS signals that slowly alter the perceived signal timing. The receiver tracks these signals and computes a position that drifts steadily from reality.",
         detectionMethods: [
-            "Monitor signal-to-noise ratio (SNR) for unusual patterns",
-            "Cross-reference with inertial navigation systems",
-            "Compare multiple GNSS receivers",
-            "Check for impossible velocity or acceleration values"
+            "Monitor long-term position deviation trends",
+            "Compare GNSS output with inertial navigation systems",
+            "Detect inconsistencies between speed, heading, and position",
+            "Cross-check multiple GNSS constellations"
         ],
         countermeasures: [
-            "Use cryptographic authentication (e.g., Galileo OS-NMA)",
-            "Deploy multi-constellation receivers",
-            "Implement signal monitoring and anomaly detection",
-            "Use anti-spoofing antennas with gain patterns"
+            "Use inertial and sensor fusion techniques",
+            "Deploy multi-constellation GNSS receivers",
+            "Apply spoofing detection algorithms",
+            "Use authenticated GNSS signals"
         ]
     },
     {
         id: "ghost",
         icon: "👻",
         title: "Ghost Ships",
-        shortDescription: "Multiple false position reports create phantom vessel tracks.",
-        fullDescription: "Ghost ship attacks generate multiple false position solutions simultaneously, creating the illusion of additional vessels in the area. This can overwhelm traffic management systems and mask real vessel movements.",
-        howItWorks: "Sophisticated attackers transmit multiple sets of coordinated spoofing signals, each representing a different false position. Receivers may jump between these false solutions, or multiple receivers in an area may each lock onto different ghost positions.",
+        attackType: "Spoofing",
+        shortDescription: "Appearance of multiple false vessel positions.",
+        fullDescription: "Ghost ship scenarios occur when spoofing creates false GNSS positions that appear as additional vessels. This can confuse operators and traffic management systems by introducing non-existent targets.",
+        howItWorks: "A spoofer transmits multiple coordinated spoofing signals or affects multiple receivers simultaneously, causing different false position solutions to appear in the same area.",
         detectionMethods: [
-            "Correlate AIS data with GNSS positions",
-            "Use radar and visual confirmation",
-            "Implement multi-receiver position comparison",
-            "Monitor for correlated position anomalies across the fleet"
+            "Compare GNSS data with radar and visual observations",
+            "Cross-check AIS information with independent sensors",
+            "Detect inconsistent or duplicated vessel tracks",
+            "Analyze correlation of anomalies across receivers"
         ],
         countermeasures: [
-            "Integrate multiple independent positioning systems",
-            "Use authenticated AIS and GNSS signals",
-            "Deploy AI-based anomaly detection",
-            "Implement vessel traffic service monitoring"
+            "Integrate GNSS with radar and optical sensors",
+            "Use authenticated AIS and GNSS sources",
+            "Apply anomaly detection at system level",
+            "Monitor traffic consistency in vessel management systems"
         ]
     },
     {
         id: "blackout",
         icon: "⚡",
         title: "Complete Blackout",
-        shortDescription: "Jamming blocks GNSS reception completely, freezing the vessel's navigation.",
-        fullDescription: "GNSS jamming is a denial-of-service attack where powerful radio frequency interference overwhelms legitimate satellite signals. This causes a complete loss of positioning capability, forcing vessels to rely on backup navigation systems.",
-        howItWorks: "A jammer transmits high-power noise or continuous wave signals on GNSS frequencies (L1, L2, L5). The interference power is significantly higher than satellite signals, preventing the receiver from acquiring or tracking satellites. Modern jammers can affect areas from hundreds of meters to several kilometers.",
+        attackType: "Jamming",
+        shortDescription: "Total loss of GNSS positioning capability.",
+        fullDescription: "Complete blackout occurs when GNSS reception is fully disrupted. This is a clear result of high-power jamming that overwhelms satellite signals and prevents the receiver from acquiring or tracking any satellites.",
+        howItWorks: "A jammer transmits strong interference on GNSS frequency bands, raising the noise floor well above the satellite signal level. As a result, the receiver loses all satellite locks.",
         detectionMethods: [
-            "Monitor automatic gain control (AGC) levels",
-            "Detect loss of satellite lock across all frequencies",
-            "Use spectrum analyzers to identify interference sources",
-            "Implement carrier-to-noise ratio monitoring"
+            "Detect loss of all tracked satellites",
+            "Monitor automatic gain control (AGC) saturation",
+            "Observe simultaneous failure across frequencies",
+            "Use spectrum monitoring tools"
         ],
         countermeasures: [
-            "Deploy directional or controlled reception pattern antennas",
-            "Use adaptive filtering and digital signal processing",
-            "Implement multi-frequency and multi-constellation reception",
-            "Maintain backup navigation systems (INS, eLoran, celestial)"
-        ]
-    },
-    {
-        id: "snr",
-        icon: "📶",
-        title: "SNR Drop",
-        shortDescription: "Gradual reduction in signal quality causes intermittent data loss.",
-        fullDescription: "Signal-to-Noise Ratio (SNR) degradation is often an early indicator of both natural interference and intentional attacks. A dropping SNR means the useful signal is becoming weaker relative to background noise, leading to position errors and eventually loss of fix.",
-        howItWorks: "SNR can degrade due to atmospheric conditions, but malicious SNR reduction often indicates low-power jamming or the early stages of a spoofing attack. Attackers may intentionally reduce SNR to test defenses or to mask the introduction of false signals.",
-        detectionMethods: [
-            "Continuous monitoring of C/N0 (carrier-to-noise density)",
-            "Track SNR trends over time and compare to baselines",
-            "Correlate SNR drops with position accuracy degradation",
-            "Use machine learning to identify abnormal SNR patterns"
-        ],
-        countermeasures: [
-            "Implement robust tracking algorithms",
-            "Use signal quality thresholds for position solution weighting",
-            "Deploy diversity reception with multiple antennas",
-            "Integrate with complementary positioning systems"
-        ]
-    }
-    ,
-    {
-        id: "basic",
-        icon: "📶",
-        title: "SNR Drop",
-        shortDescription: "Gradual reduction in signal quality causes intermittent data loss.",
-        fullDescription: "Signal-to-Noise Ratio (SNR) degradation is often an early indicator of both natural interference and intentional attacks. A dropping SNR means the useful signal is becoming weaker relative to background noise, leading to position errors and eventually loss of fix.",
-        howItWorks: "SNR can degrade due to atmospheric conditions, but malicious SNR reduction often indicates low-power jamming or the early stages of a spoofing attack. Attackers may intentionally reduce SNR to test defenses or to mask the introduction of false signals.",
-        detectionMethods: [
-            "Continuous monitoring of C/N0 (carrier-to-noise density)",
-            "Track SNR trends over time and compare to baselines",
-            "Correlate SNR drops with position accuracy degradation",
-            "Use machine learning to identify abnormal SNR patterns"
-        ],
-        countermeasures: [
-            "Implement robust tracking algorithms",
-            "Use signal quality thresholds for position solution weighting",
-            "Deploy diversity reception with multiple antennas",
-            "Integrate with complementary positioning systems"
+            "Use controlled reception pattern antennas (CRPA)",
+            "Apply adaptive filtering techniques",
+            "Use multi-frequency and multi-constellation receivers",
+            "Rely on backup navigation systems (INS, terrestrial)"
         ]
     }
 ];
+
 const GAME_PHASES = {
     1: {
         name: "Basic Training",
         scenarios: ["basic"],
         waveSize: 5,           // ← NEW: Total ships in this wave
-        target: { basic: 1 }
+        target: { basic: 3 }
     },
     2: {
         name: "Fade Introduction",
         scenarios: ["fade"],
         waveSize: 3,
-        target: { fade: 1 }
+        target: { fade: 3 }
     },
     3: {
         name: "Mixed Ops I",
         scenarios: ["basic", "fade"],
         waveSize: 3,
-        target: { total: 1 }
+        target: { total: 3 }
     },
     4: {
         name: "Jump Introduction",
         scenarios: ["jump"],
         waveSize: 3,
-        target: { jump: 1 }
+        target: { jump: 3 }
     },
     5: {
         name: "Mixed Ops II",
         scenarios: ["basic", "fade", "jump"],
         waveSize: 3,
-        target: { total: 1 }
+        target: { total: 3 }
     },
     6: {
         name: "Ghost Introduction",
         scenarios: ["ghost"],
         waveSize: 3,
-        target: { ghost: 1 }
+        target: { ghost: 3 }
     },
     7: {
         name: "Mixed Ops III",
         scenarios: ["basic", "fade", "jump", "ghost"],
         waveSize: 3,
-        target: { total: 1 }
+        target: { total: 3 }
     },
     8: {
         name: "Slow Introduction",
         scenarios: ["slow"],
         waveSize: 3,
-        target: { slow: 1 }
+        target: { slow: 3 }
     },
     9: {
         name: "Mixed Ops IV",
         scenarios: ["basic", "fade", "jump", "ghost", "slow"],
         waveSize: 3,
-        target: { total: 1 }
+        target: { total: 3 }
     },
     10: {
         name: "Blackout Introduction",
         scenarios: ["blackout"],
         waveSize: 3,
-        target: { blackout: 1 }
+        target: { blackout: 3 }
     },
     11: {
         name: "Mixed Ops V",
         scenarios: ["basic", "fade", "jump", "ghost", "slow", "blackout"],
         waveSize: 3,
-        target: { total: 1 }
+        target: { total: 3 }
     },
     12: {
         name: "SNR Introduction",
         scenarios: ["snr"],
         waveSize: 3,
-        target: { snr: 1 }
+        target: { snr: 3 }
     },
     13: {
         name: "Endless Mode",
@@ -1473,6 +1438,7 @@ export default function GameTestPage() {
     };
 
     async function shipIsClicked(ev, ship, scenario) {
+        if (isPaused || ship.x > dimensions.width * 0.9) return; // Ignore clicks when paused or ship hasn't passed 10% of gameplay width
         console.log("Ship clicked event:", ship);
 
         // ✅ READ FROM REF INSTEAD OF STATE

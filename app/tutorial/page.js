@@ -220,7 +220,7 @@ export default function TutorialPage() {
                 {/* Final CTA */}
                 <section className="flex justify-center">
                     <a
-                        href="/gameengine"
+                        href="/pregame"
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-black font-bold uppercase tracking-wide bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg shadow-emerald-500/30 hover:from-emerald-400 hover:to-emerald-300 transition-colors"
                     >
                         ▶ Enter Defense Console
